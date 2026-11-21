@@ -11,3 +11,7 @@ A self-hosted invitation and gift list application. This repository currently co
 5. Run `npm run dev` and open http://localhost:3000.
 
 Run `npm run lint` and `npm run typecheck` to check the code. Supabase schema migrations, authentication and email sending will be added in later phases.
+
+## Git hooks
+
+Run `npm run hooks:install` once in each clone to enable the tracked pre-commit hook. It runs lint and typecheck before each commit; both must pass. The command sets this repository's `core.hooksPath` to `.githooks`.
