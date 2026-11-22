@@ -10,7 +10,7 @@ A self-hosted invitation and gift list application. This repository currently co
 4. Copy `.env.example` to `.env.local` and fill in the Supabase URL and anon key. Set the service role key and admin email when configuring server-side administration; keep the service role key secret. The Resend variables are optional and will only be needed for email sending.
 5. Run `npm run dev` and open http://localhost:3000.
 
-Run `npm run lint` and `npm run typecheck` to check the code. Supabase schema migrations, authentication and email sending will be added in later phases.
+Run `npm run lint` and `npm run typecheck` to check the code. The database migration is in `supabase/migrations`, and `supabase/seed.sql` contains fictional local development data. Apply the migration before the seed using a Supabase development database; do not seed a production database. Authentication and email sending will be added in later phases. Guest tokens in the seed are randomly generated and can be inspected in the local database.
 
 ## Git hooks
 
