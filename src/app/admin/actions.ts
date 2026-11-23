@@ -137,3 +137,69 @@ export async function deleteGift(data: FormData) {
   if (error || !deleted) finish(eventId, "error");
   finish(eventId, "saved");
 }
+
+export async function sendInvitations(data: FormData) {
+  const eventId = await authorizedEvent(data);
+  const guestIdValue = text(data, "guestId");
+  if (guestIdValue && !uuid.test(guestIdValue)) finish(eventId, "invalid");
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const from = process.env.RESEND_FROM_EMAIL?.trim();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!apiKey || !from || !appUrl) finish(eventId, "emailNotConfigured");
+  const db = createServiceClient();
+  const { data: event, error: eventError } = await db.from("events")
+    .select("title, invitation_content, invitation_image_path").eq("id", eventId).maybeSingle();
+  if (eventError || !event) finish(eventId, "error");
+  if (!event.invitation_image_path) finish(eventId, "emailNoImage");
+  let query = db.from("guests").select("id, display_name, email, token")
+    .eq("event_id", eventId).not("email", "is", null);
+  query = guestIdValue ? query.eq("id", guestIdValue) : query.is("invited_at", null);
+  const { data: guests, error: guestsError } = await query.order("id");
+  if (guestsError || !guests) finish(eventId, "error");
+  if (!guests.length) finish(eventId, "emailNone");
+  const { data: image, error: imageError } = await db.storage.from("invitations").download(event.invitation_image_path);
+  if (imageError || !image || !["image/jpeg", "image/png", "image/webp"].includes(image.type)) finish(eventId, "emailImageError");
+  const imageContent = Buffer.from(await image.arrayBuffer()).toString("base64");
+  const { sendInvitation } = await import("@/lib/email/resend.mjs");
+  let sent = 0;
+  let failed = 0;
+  let unrecorded = 0;
+  for (const [index, guest] of guests.entries()) {
+    // Claims prevent simultaneous requests from sending the same invitation.
+    const claimId = randomUUID();
+    const stale = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    let claim = db.from("guests").update({ invitation_claim_id: claimId, invitation_claimed_at: new Date().toISOString() })
+      .eq("id", guest.id).eq("event_id", eventId).eq("email", guest.email)
+      .or(`invitation_claimed_at.is.null,invitation_claimed_at.lt.${stale}`);
+    if (!guestIdValue) claim = claim.is("invited_at", null);
+    const { data: claimed, error: claimError } = await claim.select("id").maybeSingle();
+    if (claimError || !claimed) { failed++; continue; }
+    // Resend's default rate limit is two requests per second.
+    if (index > 0) await new Promise(resolve => setTimeout(resolve, 600));
+    let accepted = false;
+    try {
+      const link = new URL(`/i/${encodeURIComponent(guest.token)}`, appUrl).toString();
+      accepted = await sendInvitation({ apiKey, from, to: guest.email, family: guest.display_name,
+        title: event.title, content: event.invitation_content, link, image: imageContent, imageType: image.type });
+    } catch {
+      // The remote service may have accepted the request before the connection failed.
+    }
+    if (!accepted) {
+      await db.from("guests").update({ invitation_claim_id: null, invitation_claimed_at: null })
+        .eq("id", guest.id).eq("invitation_claim_id", claimId);
+      failed++;
+      continue;
+    }
+    try {
+      const { data: updated, error } = await db.from("guests").update({ invited_at: new Date().toISOString(), invitation_claim_id: null, invitation_claimed_at: null })
+        .eq("id", guest.id).eq("event_id", eventId).eq("email", guest.email).eq("invitation_claim_id", claimId).select("id").maybeSingle();
+      if (error || !updated) unrecorded++;
+      else sent++;
+    } catch {
+      unrecorded++;
+    }
+  }
+  revalidatePath("/admin");
+  const result = new URLSearchParams({ event: eventId, notice: "emailResult", sent: String(sent), failed: String(failed), unrecorded: String(unrecorded) });
+  redirect(`/admin?${result}`);
+}
