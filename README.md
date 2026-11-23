@@ -15,3 +15,7 @@ Run `npm run lint` and `npm run typecheck` to check the code. The database migra
 ## Git hooks
 
 Run `npm run hooks:install` once in each clone to enable the tracked pre-commit hook. It runs lint and typecheck before each commit; both must pass. The command sets this repository's `core.hooksPath` to `.githooks`.
+
+## Guest invitations
+
+Apply all migrations before using a guest link at `/i/<token>`. Set `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` on the server. The invitation image path is a Storage object path in a private bucket named `invitations`; create this bucket and upload an image before setting the event path. A missing image path is allowed. RSVP deadlines are stored as timestamps with time zones; an unset deadline leaves RSVP changes open. Guests can release a reservation before selecting another gift.
