@@ -31,3 +31,46 @@ The panel can create and select events, update invitation text and image, and ma
 Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` to enable invitation emails. The sender address must use a domain verified with Resend. Upload an invitation image before sending; it is embedded in each Spanish email alongside the personal link. The bulk button sends only to guests with an email address and no recorded `invited_at`; the per-guest button sends again and updates that timestamp after Resend accepts the message. Without Resend configuration, copying links remains available.
 
 The result distinguishes accepted and recorded messages, failures or missing responses, and accepted messages that could not be recorded. A missing response may still mean Resend accepted the email; check the Resend dashboard before retrying failures or unrecorded sends to avoid duplicates. Acceptance is not a delivery confirmation. The bulk action sends sequentially, so very large lists may exceed the hosting provider's request timeout; rerun it for guests still unmarked after checking Resend.
+
+## Supabase integration tests
+
+These tests write isolated fixtures and delete them afterwards. Use a dedicated disposable Supabase project, never production. Apply all migrations to it, then configure `.env.local` with the test project's `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`. Also set `TEST_SUPABASE_URL` to the same test project URL, `TEST_SUPABASE_SERVICE_ROLE_KEY` to its server key, `TEST_APP_URL=http://localhost:3000`, and `TEST_ALLOW_DATABASE_WRITES=true`. Start the app with `npm run dev` in another terminal, and run:
+
+```sh
+npm run test:integration
+```
+
+The suite sends concurrent reservation requests, checks invalid-token database operations and HTTP 404s, and checks that a past deadline prevents RSVP updates. `npm test` runs the offline unit tests only. If a test run is interrupted, its test event and related records may need manual cleanup in the test project.
+
+## Deploy to Vercel
+
+1. Push this repository to a Git provider supported by Vercel. Create a **new** Supabase production project, and note its project reference, project URL, publishable key and secret key from **Settings → API Keys** (legacy `anon` and `service_role` keys are also supported).
+2. Install the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started). In the repository root, run the following; run `supabase init` only if `supabase/config.toml` does not already exist. Confirm the project reference carefully before pushing:
+
+   ```sh
+   supabase init
+   supabase login
+   supabase link --project-ref <production-project-ref>
+   supabase db push --dry-run --remote
+   supabase db push --remote
+   ```
+
+   This applies the migrations and creates the private `invitations` Storage bucket. Do not use `--include-seed` for production. If the project already has a schema or migration history, reconcile it before applying these migrations.
+3. In Resend, add and verify your sending domain in **Domains**, then create an API key in **API Keys**. Choose an address on that domain as the sender. Resend is optional for guest invitations; leave its two variables unset to use copied links instead.
+4. In Vercel, create a project by importing the Git repository, select the Next.js framework and the repository root, and use Node.js 22 or newer. Under **Settings → Environment Variables**, add the following for **Production**:
+
+   | Variable | Value |
+   | --- | --- |
+   | `NEXT_PUBLIC_SUPABASE_URL` | Supabase production project URL |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase publishable (or legacy anon) key |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase secret (or legacy service-role) key; server only |
+   | `ADMIN_EMAIL` | The one email address allowed into `/admin` |
+   | `NEXT_PUBLIC_APP_URL` | Final HTTPS origin, for example `https://example.com` |
+   | `RESEND_API_KEY` | Resend API key, if using invitation email |
+   | `RESEND_FROM_EMAIL` | Verified sender address, if using invitation email |
+
+   Do not put test variables or the service key in public variables. Deploy the production branch. If the final Vercel domain was not known beforehand, set `NEXT_PUBLIC_APP_URL` to the final HTTPS origin and redeploy after it is known. Changes to environment variables require a new deployment.
+5. In Supabase **Authentication → URL Configuration**, set **Site URL** to the same production origin and add `https://<your-domain>/admin/auth/callback` to **Redirect URLs**. Enable email sign-in. Configure custom SMTP under Authentication for reliable magic-link delivery; Resend's Supabase integration is one option. Supabase's default mail service restricts recipients and is not intended for production. Auth SMTP is separate from the app's Resend API settings.
+6. Visit `https://<your-domain>/admin`, request a magic link for `ADMIN_EMAIL`, and open it in the same browser. Create an event, upload its image, set the deadline, add guests and gifts, and verify a guest link and RSVP. If Resend is configured, send a test invitation to an address you control. Test deployments should use their own Supabase project, keys, admin email and app URL rather than production credentials.
+
+References: [Supabase migrations](https://supabase.com/docs/guides/deployment/database-migrations), [Auth redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls), [Auth SMTP](https://supabase.com/docs/guides/auth/auth-smtp), and [Vercel Git deployments](https://vercel.com/docs/git).
