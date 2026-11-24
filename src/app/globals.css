@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+@layer base {
+  button:enabled:hover {
+    cursor: pointer;
+  }
+
+  button:disabled:hover {
+    cursor: not-allowed;
+  }
+}
