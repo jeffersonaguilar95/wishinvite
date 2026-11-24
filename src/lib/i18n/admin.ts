@@ -1,5 +1,8 @@
 export const adminMessages = {
   es: {
+    saveGuests: "Guardar invitados",
+    saveGifts: "Guardar regalos",
+    unsaved: "Hay cambios sin guardar en el panel. ¿Quieres continuar?",
     other: "Aún no lo saben",
     assignGift: "Asignar regalo",
     selectFamily: "Selecciona una familia",
@@ -8,6 +11,9 @@ export const adminMessages = {
     sendInvitations: "Enviar invitaciones", resend: "Reenviar", invitationSentAt: "Último envío aceptado", emailDisabled: "Configura RESEND_API_KEY y RESEND_FROM_EMAIL para enviar invitaciones; puedes seguir copiando enlaces.", emailNotConfigured: "El envío de correo no está configurado.", emailNoImage: "Sube una imagen de invitación antes de enviar correos.", emailImageError: "No se ha podido cargar la imagen de la invitación.", emailNone: "No hay invitaciones pendientes con correo electrónico.", emailResult: (sent: number, failed: number, unrecorded: number) => `Aceptadas y registradas: ${sent}. Fallidas o sin respuesta: ${failed}. Aceptadas pero no registradas: ${unrecorded}. Revisa Resend antes de repetir las fallidas o no registradas.`, title: "Administración", signOut: "Cerrar sesión", event: "Evento", createEvent: "Crear evento", selectEvent: "Seleccionar evento", newEvent: "Nuevo evento", eventTitle: "Título", locale: "Idioma", spanish: "Español", english: "Inglés", content: "Texto de la invitación", image: "Imagen de la invitación (JPG, PNG o WebP; máximo 4 MB)", currentImage: "Imagen actual", deadline: "Fecha límite de respuesta (UTC)", save: "Guardar", add: "Añadir", remove: "Eliminar", guests: "Familias invitadas", family: "Nombre de la familia", email: "Correo electrónico (opcional)", copy: "Copiar enlace", copied: "Enlace copiado", copyFailed: "No se ha podido copiar; selecciona el enlace.", gifts: "Regalos", giftName: "Nombre del regalo", description: "Descripción (opcional)", giftUrl: "Enlace al regalo (opcional)", responses: "Respuestas y reservas", response: "Asistencia", gift: "Regalo reservado", confirmed: "Confirmadas", declined: "No asistirán", pending: "Pendientes", none: "Ninguno", saved: "Cambios guardados.", invalid: "Revisa los datos introducidos.", error: "No se ha podido completar la operación.", imageInvalid: "La imagen debe ser JPG, PNG o WebP y pesar como máximo 4 MB.", guestReserved: "Esta familia tiene un regalo reservado. Pídele que lo libere antes de eliminarla.", noEvent: "Crea un evento para empezar.", noGuests: "Todavía no hay familias invitadas.", noGifts: "Todavía no hay regalos.", loginInfo: "Introduce el correo de administración para recibir un enlace de acceso.", loginEmail: "Correo electrónico", sendLink: "Enviar enlace", loginSent: "Si el correo está autorizado, recibirás un enlace de acceso.", loginError: "No se ha podido enviar el enlace. Vuelve a intentarlo.",
   },
   en: {
+    saveGuests: "Save guests",
+    saveGifts: "Save gifts",
+    unsaved: "There are unsaved changes on this page. Do you want to continue?",
     other: "Still unsure",
     assignGift: "Assign gift",
     selectFamily: "Select a family",

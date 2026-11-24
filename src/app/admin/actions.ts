@@ -81,22 +81,6 @@ export async function saveEvent(data: FormData) {
   finish(eventId, "saved");
 }
 
-export async function saveGuest(data: FormData) {
-  const eventId = await authorizedEvent(data);
-  const guestId = text(data, "guestId");
-  const name = text(data, "name");
-  const email = text(data, "email", 254);
-  if (!name || email === null || (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) ||
-      (guestId && !uuid.test(guestId))) finish(eventId, "invalid");
-  const db = createServiceClient();
-  const values = { display_name: name, email: email || null, updated_at: new Date().toISOString() };
-  const query = guestId ? db.from("guests").update(values).eq("id", guestId).eq("event_id", eventId)
-    : db.from("guests").insert({ ...values, event_id: eventId });
-  const { data: changed, error } = await query.select("id").maybeSingle();
-  if (error || !changed) finish(eventId, "error");
-  finish(eventId, "saved");
-}
-
 export async function deleteGuest(data: FormData) {
   const eventId = await authorizedEvent(data);
   const guestId = id(data, "guestId");
@@ -108,24 +92,50 @@ export async function deleteGuest(data: FormData) {
   finish(eventId, "saved");
 }
 
-export async function saveGift(data: FormData) {
-  const eventId = await authorizedEvent(data);
-  const giftId = text(data, "giftId");
-  const name = text(data, "name");
-  const description = text(data, "description", 2000);
-  const url = text(data, "url", 2000);
-  if (!name || description === null || url === null || (giftId && !uuid.test(giftId))) finish(eventId, "invalid");
-  if (url) {
-    try { if (!["http:", "https:"].includes(new URL(url).protocol)) finish(eventId, "invalid"); }
-    catch { finish(eventId, "invalid"); }
+export async function saveSection(
+  eventId: string,
+  section: "guests" | "gifts",
+  data: FormData,
+): Promise<{ status: "saved" | "error" } | { status: "invalid"; row: string }> {
+  await requireAdmin();
+  if (!uuid.test(eventId) || (section !== "guests" && section !== "gifts")) return { status: "error" };
+  const rows = [];
+  for (const key of data.getAll("rows")) {
+    if (typeof key !== "string") return { status: "error" };
+    const rowId = key.startsWith("new-") ? null : key;
+    const name = text(data, `${key}.name`);
+    if (!name || (rowId && !uuid.test(rowId))) return { status: "invalid", row: key };
+
+    if (section === "guests") {
+      const email = text(data, `${key}.email`, 254);
+      if (email === null || (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+        return { status: "invalid", row: key };
+      }
+      rows.push({ id: rowId, name, email: email || null });
+    } else {
+      const description = text(data, `${key}.description`, 2000);
+      const url = text(data, `${key}.url`, 2000);
+      if (description === null || url === null) return { status: "invalid", row: key };
+      if (url) {
+        try {
+          if (!["http:", "https:"].includes(new URL(url).protocol)) return { status: "invalid", row: key };
+        } catch {
+          return { status: "invalid", row: key };
+        }
+      }
+      rows.push({ id: rowId, name, description: description || null, url: url || null });
+    }
   }
-  const db = createServiceClient();
-  const values = { name, description: description || null, url: url || null, updated_at: new Date().toISOString() };
-  const query = giftId ? db.from("gifts").update(values).eq("id", giftId).eq("event_id", eventId)
-    : db.from("gifts").insert({ ...values, event_id: eventId });
-  const { data: changed, error } = await query.select("id").maybeSingle();
-  if (error || !changed) finish(eventId, "error");
-  finish(eventId, "saved");
+
+  if (rows.length) {
+    const { error } = await createServiceClient().rpc(
+      section === "guests" ? "save_event_guests" : "save_event_gifts",
+      { p_event_id: eventId, p_rows: rows },
+    );
+    if (error) return { status: "error" };
+    revalidatePath("/admin");
+  }
+  return { status: "saved" };
 }
 
 export async function assignGift(data: FormData) {

@@ -1,8 +1,10 @@
 import { requireAdmin } from "@/lib/admin/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { adminMessages } from "@/lib/i18n/admin";
+import { DraftGuard } from "@/components/admin/draft-guard";
+import { SectionEditor } from "@/components/admin/section-editor";
 import { CopyLink } from "@/components/admin/copy-link";
-import { assignGift, createEvent, deleteGift, deleteGuest, saveEvent, saveGift, saveGuest, sendInvitations, signOut } from "./actions";
+import { assignGift, createEvent, deleteGift, deleteGuest, saveEvent, sendInvitations, signOut } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false, follow: false }, referrer: "no-referrer" as const };
@@ -51,7 +53,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
     else if (guest.rsvp_status === "other") counts.other++;
     else counts.pending++;
   }
-  return <main lang={locale} className="mx-auto max-w-5xl space-y-8 p-4 sm:p-8">
+  return <DraftGuard locale={locale} warning={t.unsaved}>
     <header className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-3xl font-bold">{t.title}</h1><form action={signOut}><button className={outline}>{t.signOut}</button></form></header>
     {notice && <p role="status" className="rounded bg-slate-100 p-3">{notice}</p>}
     {events.length > 1 && <nav aria-label={t.selectEvent} className="flex flex-wrap gap-3">{events.map(item => <a key={item.id} href={`/admin?event=${item.id}`} className="underline" aria-current={item.id === event?.id ? "page" : undefined}>{item.title}</a>)}</nav>}
@@ -78,38 +80,59 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
         {!emailEnabled && <p>{t.emailDisabled}</p>}
         <form action={sendInvitations}><input type="hidden" name="eventId" value={event.id} /><button className={button} disabled={!emailEnabled} style={{ opacity: emailEnabled ? 1 : 0.5 }}>{t.sendInvitations}</button></form>
         {guests.length === 0 && <p>{t.noGuests}</p>}
-        <ul className="space-y-4">{guests.map(guest => { const link = new URL(`/i/${encodeURIComponent(guest.token)}`, appUrl).toString(); return <li key={guest.id} className="space-y-3 rounded border p-4">
-          <form action={saveGuest} className="flex flex-wrap items-end gap-3"><input type="hidden" name="eventId" value={event.id} /><input type="hidden" name="guestId" value={guest.id} />
-            <label>{t.family}<input className={input} name="name" defaultValue={guest.display_name} maxLength={200} required /></label><label>{t.email}<input className={input} type="email" name="email" defaultValue={guest.email ?? ""} maxLength={254} /></label><button className={button}>{t.save}</button>
-          </form><div className="flex flex-wrap gap-2"><input aria-label={t.copy} readOnly value={link} className="min-w-0 flex-1 rounded border p-2" /><CopyLink url={link} label={t.copy} copied={t.copied} failed={t.copyFailed} /></div>
-          {guest.invited_at && <p>{t.invitationSentAt}: <time dateTime={guest.invited_at}>{new Date(guest.invited_at).toLocaleString(locale === "es" ? "es-ES" : "en-GB", { timeZone: "UTC" })} UTC</time></p>}
-          {guest.email && <form action={sendInvitations}><input type="hidden" name="eventId" value={event.id} /><input type="hidden" name="guestId" value={guest.id} /><button className={outline} disabled={!emailEnabled} style={{ opacity: emailEnabled ? 1 : 0.5 }}>{t.resend}</button></form>}
-          <form action={deleteGuest}><input type="hidden" name="eventId" value={event.id} /><input type="hidden" name="guestId" value={guest.id} /><button className={outline}>{t.remove}</button></form>
-        </li>; })}</ul>
-        <form action={saveGuest} className="flex flex-wrap items-end gap-3"><input type="hidden" name="eventId" value={event.id} /><label>{t.family}<input className={input} name="name" required maxLength={200} /></label><label>{t.email}<input className={input} type="email" name="email" maxLength={254} /></label><button className={button}>{t.add}</button></form>
+        <SectionEditor key={`guests-${event.id}`} section="guests" eventId={event.id} locale={locale}
+          rows={guests.map(guest => {
+            const link = new URL(`/i/${encodeURIComponent(guest.token)}`, appUrl).toString();
+            return {
+              id: guest.id,
+              values: { name: guest.display_name, email: guest.email ?? "" },
+              actions: <>
+                <div className="flex flex-wrap gap-2">
+                  <input aria-label={t.copy} readOnly value={link} className="min-w-0 flex-1 rounded border p-2" />
+                  <CopyLink url={link} label={t.copy} copied={t.copied} failed={t.copyFailed} />
+                </div>
+                {guest.invited_at && <p>{t.invitationSentAt}: <time dateTime={guest.invited_at}>{new Date(guest.invited_at).toLocaleString(locale === "es" ? "es-ES" : "en-GB", { timeZone: "UTC" })} UTC</time></p>}
+                {guest.email && <form action={sendInvitations}>
+                  <input type="hidden" name="eventId" value={event.id} />
+                  <input type="hidden" name="guestId" value={guest.id} />
+                  <button className={outline} disabled={!emailEnabled} style={{ opacity: emailEnabled ? 1 : 0.5 }}>{t.resend}</button>
+                </form>}
+                <form action={deleteGuest}>
+                  <input type="hidden" name="eventId" value={event.id} />
+                  <input type="hidden" name="guestId" value={guest.id} />
+                  <button className={outline}>{t.remove}</button>
+                </form>
+              </>,
+            };
+          })} />
       </section>
       <section className="space-y-4"><h2 className="text-2xl font-semibold">{t.gifts}</h2>
         {gifts.length === 0 && <p>{t.noGifts}</p>}
-        <ul className="space-y-4">{gifts.map(gift => <li key={gift.id} className="space-y-3 rounded border p-4">
-          <form action={saveGift} className="flex flex-wrap items-end gap-3"><input type="hidden" name="eventId" value={event.id} /><input type="hidden" name="giftId" value={gift.id} />
-            <label>{t.giftName}<input className={input} name="name" defaultValue={gift.name} required maxLength={200} /></label><label>{t.description}<input className={input} name="description" defaultValue={gift.description ?? ""} maxLength={2000} /></label><label>{t.giftUrl}<input className={input} type="url" name="url" defaultValue={gift.url ?? ""} maxLength={2000} /></label><button className={button}>{t.save}</button>
-          </form>
-          {gift.reserved_by_guest_id === null && availableFamilies.length > 0 && (
-            <form action={assignGift} className="flex flex-wrap items-end gap-3">
-              <input type="hidden" name="eventId" value={event.id} />
-              <input type="hidden" name="giftId" value={gift.id} />
-              <label>{t.family}
-                <select name="guestId" className={input} required defaultValue="">
-                  <option value="" disabled>{t.selectFamily}</option>
-                  {availableFamilies.map(guest => <option key={guest.id} value={guest.id}>{guest.display_name}</option>)}
-                </select>
-              </label>
-              <button className={outline}>{t.assignGift}</button>
-            </form>
-          )}
-          <form action={deleteGift}><input type="hidden" name="eventId" value={event.id} /><input type="hidden" name="giftId" value={gift.id} /><button className={outline}>{t.remove}</button></form>
-        </li>)}</ul>
-        <form action={saveGift} className="flex flex-wrap items-end gap-3"><input type="hidden" name="eventId" value={event.id} /><label>{t.giftName}<input className={input} name="name" required maxLength={200} /></label><label>{t.description}<input className={input} name="description" maxLength={2000} /></label><label>{t.giftUrl}<input className={input} type="url" name="url" maxLength={2000} /></label><button className={button}>{t.add}</button></form>
+        <SectionEditor key={`gifts-${event.id}`} section="gifts" eventId={event.id} locale={locale}
+          rows={gifts.map(gift => ({
+            id: gift.id,
+            values: { name: gift.name, description: gift.description ?? "", url: gift.url ?? "" },
+            actions: <>
+              {gift.reserved_by_guest_id === null && availableFamilies.length > 0 && (
+                <form action={assignGift} className="flex flex-wrap items-end gap-3">
+                  <input type="hidden" name="eventId" value={event.id} />
+                  <input type="hidden" name="giftId" value={gift.id} />
+                  <label>{t.family}
+                    <select name="guestId" className={input} required defaultValue="">
+                      <option value="" disabled>{t.selectFamily}</option>
+                      {availableFamilies.map(guest => <option key={guest.id} value={guest.id}>{guest.display_name}</option>)}
+                    </select>
+                  </label>
+                  <button className={outline}>{t.assignGift}</button>
+                </form>
+              )}
+              <form action={deleteGift}>
+                <input type="hidden" name="eventId" value={event.id} />
+                <input type="hidden" name="giftId" value={gift.id} />
+                <button className={outline}>{t.remove}</button>
+              </form>
+            </>,
+          }))} />
       </section>
       <section className="space-y-4"><h2 className="text-2xl font-semibold">{t.responses}</h2>
         <div className="flex flex-wrap gap-4"><p>{t.confirmed}: {counts.yes}</p><p>{t.declined}: {counts.no}</p><p>{t.other}: {counts.other}</p><p>{t.pending}: {counts.pending}</p></div>
@@ -118,5 +141,5 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
         </tbody></table></div>
       </section>
     </>}
-  </main>;
+  </DraftGuard>;
 }
