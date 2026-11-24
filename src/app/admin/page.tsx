@@ -2,14 +2,14 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { adminMessages } from "@/lib/i18n/admin";
 import { CopyLink } from "@/components/admin/copy-link";
-import { createEvent, deleteGift, deleteGuest, saveEvent, saveGift, saveGuest, sendInvitations, signOut } from "./actions";
+import { assignGift, createEvent, deleteGift, deleteGuest, saveEvent, saveGift, saveGuest, sendInvitations, signOut } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false, follow: false }, referrer: "no-referrer" as const };
 const input = "mt-1 block w-full rounded border border-slate-400 p-2";
 const button = "rounded bg-slate-800 px-4 py-2 text-white";
 const outline = "rounded border border-slate-600 px-3 py-2";
-const notices = ["saved", "invalid", "error", "imageInvalid", "guestReserved", "emailNotConfigured", "emailNoImage", "emailImageError", "emailNone"] as const;
+const notices = ["saved", "invalid", "error", "imageInvalid", "guestReserved", "familyAlreadyReserved", "giftUnavailable", "emailNotConfigured", "emailNoImage", "emailImageError", "emailNone"] as const;
 type Notice = (typeof notices)[number];
 
 export default async function Admin({ searchParams }: { searchParams: Promise<{ event?: string; notice?: string; sent?: string; failed?: string; unrecorded?: string }> }) {
@@ -41,10 +41,14 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
     if (error || !data) throw new Error("Unable to load invitation image");
     imageUrl = data.signedUrl;
   }
-  const counts = { yes: 0, no: 0, pending: 0 };
+  const reservations = new Map(gifts.filter(gift => gift.reserved_by_guest_id !== null)
+    .map(gift => [gift.reserved_by_guest_id, gift.name]));
+  const availableFamilies = guests.filter(guest => !reservations.has(guest.id));
+  const counts = { yes: 0, no: 0, other: 0, pending: 0 };
   for (const guest of guests) {
     if (guest.rsvp_status === "yes") counts.yes++;
     else if (guest.rsvp_status === "no") counts.no++;
+    else if (guest.rsvp_status === "other") counts.other++;
     else counts.pending++;
   }
   return <main lang={locale} className="mx-auto max-w-5xl space-y-8 p-4 sm:p-8">
@@ -89,14 +93,28 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
         <ul className="space-y-4">{gifts.map(gift => <li key={gift.id} className="space-y-3 rounded border p-4">
           <form action={saveGift} className="flex flex-wrap items-end gap-3"><input type="hidden" name="eventId" value={event.id} /><input type="hidden" name="giftId" value={gift.id} />
             <label>{t.giftName}<input className={input} name="name" defaultValue={gift.name} required maxLength={200} /></label><label>{t.description}<input className={input} name="description" defaultValue={gift.description ?? ""} maxLength={2000} /></label><label>{t.giftUrl}<input className={input} type="url" name="url" defaultValue={gift.url ?? ""} maxLength={2000} /></label><button className={button}>{t.save}</button>
-          </form><form action={deleteGift}><input type="hidden" name="eventId" value={event.id} /><input type="hidden" name="giftId" value={gift.id} /><button className={outline}>{t.remove}</button></form>
+          </form>
+          {gift.reserved_by_guest_id === null && availableFamilies.length > 0 && (
+            <form action={assignGift} className="flex flex-wrap items-end gap-3">
+              <input type="hidden" name="eventId" value={event.id} />
+              <input type="hidden" name="giftId" value={gift.id} />
+              <label>{t.family}
+                <select name="guestId" className={input} required defaultValue="">
+                  <option value="" disabled>{t.selectFamily}</option>
+                  {availableFamilies.map(guest => <option key={guest.id} value={guest.id}>{guest.display_name}</option>)}
+                </select>
+              </label>
+              <button className={outline}>{t.assignGift}</button>
+            </form>
+          )}
+          <form action={deleteGift}><input type="hidden" name="eventId" value={event.id} /><input type="hidden" name="giftId" value={gift.id} /><button className={outline}>{t.remove}</button></form>
         </li>)}</ul>
         <form action={saveGift} className="flex flex-wrap items-end gap-3"><input type="hidden" name="eventId" value={event.id} /><label>{t.giftName}<input className={input} name="name" required maxLength={200} /></label><label>{t.description}<input className={input} name="description" maxLength={2000} /></label><label>{t.giftUrl}<input className={input} type="url" name="url" maxLength={2000} /></label><button className={button}>{t.add}</button></form>
       </section>
       <section className="space-y-4"><h2 className="text-2xl font-semibold">{t.responses}</h2>
-        <div className="flex flex-wrap gap-4"><p>{t.confirmed}: {counts.yes}</p><p>{t.declined}: {counts.no}</p><p>{t.pending}: {counts.pending}</p></div>
+        <div className="flex flex-wrap gap-4"><p>{t.confirmed}: {counts.yes}</p><p>{t.declined}: {counts.no}</p><p>{t.other}: {counts.other}</p><p>{t.pending}: {counts.pending}</p></div>
         <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="p-2">{t.family}</th><th className="p-2">{t.response}</th><th className="p-2">{t.gift}</th></tr></thead><tbody>
-          {guests.map(guest => <tr key={guest.id} className="border-t"><td className="p-2">{guest.display_name}</td><td className="p-2">{guest.rsvp_status === "yes" ? t.confirmed : guest.rsvp_status === "no" ? t.declined : t.pending}</td><td className="p-2">{gifts.find(gift => gift.reserved_by_guest_id === guest.id)?.name ?? t.none}</td></tr>)}
+          {guests.map(guest => <tr key={guest.id} className="border-t"><td className="p-2">{guest.display_name}</td><td className="p-2">{guest.rsvp_status === "yes" ? t.confirmed : guest.rsvp_status === "no" ? t.declined : guest.rsvp_status === "other" ? t.other : t.pending}</td><td className="p-2">{reservations.get(guest.id) ?? t.none}</td></tr>)}
         </tbody></table></div>
       </section>
     </>}

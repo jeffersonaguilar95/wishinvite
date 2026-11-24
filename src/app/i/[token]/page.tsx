@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { guestMessages, type GuestLocale } from "@/lib/i18n/guest";
 import { createServiceClient } from "@/lib/supabase/service";
-import { changeReservation, updateRsvp } from "./actions";
+import { changeReservation, reserveCustomGift, updateRsvp } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false, follow: false }, referrer: "no-referrer" as const };
@@ -46,6 +46,8 @@ export default async function InvitationPage({
   }
   const rsvpAction = updateRsvp.bind(null, token);
   const giftAction = changeReservation.bind(null, token);
+  const customGiftAction = reserveCustomGift.bind(null, token);
+  const hasReservation = gifts.some(gift => gift.reserved_by_guest_id === guest.id);
 
   return (
     <main lang={locale} className="mx-auto min-h-screen max-w-2xl space-y-8 px-4 py-8 text-slate-900">
@@ -64,7 +66,7 @@ export default async function InvitationPage({
         <h2 id="rsvp-heading" className="text-2xl font-semibold">{text.attendance}</h2>
         {closed && <p>{text.deadlinePassed}</p>}
         <form action={rsvpAction} className="flex flex-wrap gap-3">
-          {(["yes", "no"] as const).map((status) => (
+          {(["yes", "no", "other"] as const).map((status) => (
             <button key={status} name="status" value={status} disabled={closed}
               aria-pressed={guest.rsvp_status === status}
               className="rounded border border-slate-700 px-4 py-3 aria-pressed:bg-slate-800 aria-pressed:text-white disabled:opacity-50">
@@ -88,10 +90,10 @@ export default async function InvitationPage({
             }
             return (
               <li key={gift.id} className="space-y-2 rounded-lg border border-slate-300 p-4">
-                <h3 className="text-lg font-semibold">{gift.name}</h3>
+                <h3 className="text-lg font-semibold">{available ? gift.name : <s>{gift.name}</s>}</h3>
                 {gift.description && <p>{gift.description}</p>}
                 {safeUrl && <a className="underline" href={safeUrl} target="_blank" rel="noopener noreferrer">{text.link}</a>}
-                <p>{mine ? text.mine : available ? text.available : text.reserved}</p>
+                <p>{available ? text.available : text.reserved}{mine && ` · ${text.mine}`}</p>
                 {(mine || available) && (
                   <form action={giftAction}>
                     <input type="hidden" name="giftId" value={gift.id} />
@@ -105,6 +107,17 @@ export default async function InvitationPage({
             );
           })}
         </ul>
+        {!hasReservation && (
+          <form action={customGiftAction} className="space-y-2 rounded-lg border border-slate-300 p-4">
+            <label className="block font-semibold">
+              {text.otherGift}
+              <input name="name" required maxLength={200} placeholder={text.otherGiftName}
+                className="mt-1 block w-full rounded border border-slate-400 p-2 font-normal" />
+            </label>
+            <p className="text-sm">{text.otherGiftVisibility}</p>
+            <button className="rounded bg-slate-800 px-4 py-3 text-white">{text.reserve}</button>
+          </form>
+        )}
       </section>
     </main>
   );

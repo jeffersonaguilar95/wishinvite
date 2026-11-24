@@ -128,6 +128,25 @@ export async function saveGift(data: FormData) {
   finish(eventId, "saved");
 }
 
+export async function assignGift(data: FormData) {
+  const eventId = await authorizedEvent(data);
+  const guestId = id(data, "guestId");
+  const giftId = id(data, "giftId");
+  if (!guestId || !giftId) finish(eventId, "invalid");
+
+  const db = createServiceClient();
+  const { data: guest, error: guestError } = await db.from("guests")
+    .select("token").eq("id", guestId).eq("event_id", eventId).maybeSingle();
+  if (guestError) finish(eventId, "error");
+  if (!guest) finish(eventId, "invalid");
+  const { data: reserved, error } = await db.rpc("reserve_gift", {
+    p_token: guest.token, p_gift_id: giftId,
+  });
+  if (error?.code === "23505") finish(eventId, "familyAlreadyReserved");
+  if (error) finish(eventId, "error");
+  finish(eventId, reserved ? "saved" : "giftUnavailable");
+}
+
 export async function deleteGift(data: FormData) {
   const eventId = await authorizedEvent(data);
   const giftId = id(data, "giftId");

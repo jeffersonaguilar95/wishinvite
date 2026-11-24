@@ -23,7 +23,7 @@ function finish(token: string, notice: string): never {
 export async function updateRsvp(token: string, formData: FormData) {
   await validateGuest(token);
   const status = formData.get("status");
-  if (status !== "yes" && status !== "no") finish(token, "failed");
+  if (status !== "yes" && status !== "no" && status !== "other") finish(token, "failed");
   const { data, error } = await createServiceClient().rpc("update_rsvp", {
     p_token: token, p_status: status,
   });
@@ -45,4 +45,17 @@ export async function changeReservation(token: string, formData: FormData) {
   if (error) finish(token, error.code === "23505" ? "alreadyReserved" : "failed");
   if (!data) finish(token, operation === "reserve" ? "taken" : "failed");
   finish(token, operation === "reserve" ? "reservedSuccess" : "released");
+}
+
+export async function reserveCustomGift(token: string, formData: FormData) {
+  await validateGuest(token);
+  const value = formData.get("name");
+  const name = typeof value === "string" ? value.trim() : "";
+  if (!name || name.length > 200) finish(token, "failed");
+
+  const { data, error } = await createServiceClient().rpc("reserve_custom_gift", {
+    p_token: token, p_name: name,
+  });
+  if (error) finish(token, error.code === "23505" ? "alreadyReserved" : "failed");
+  finish(token, data ? "reservedSuccess" : "failed");
 }
