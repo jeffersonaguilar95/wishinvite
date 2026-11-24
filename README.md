@@ -2,6 +2,10 @@
 
 A self-hosted invitation and gift list application. It includes guest invitations and an admin panel.
 
+## Project status
+
+Wishvite is in **alpha** and under active development. Features, configuration, and database migrations may change before the first stable release.
+
 ## Local setup
 
 1. Install Node.js 22.13 or newer and npm.
