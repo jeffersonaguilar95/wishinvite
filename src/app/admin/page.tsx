@@ -34,7 +34,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   if (!appUrl) throw new Error("App URL is missing");
   const [{ data: guests, error: guestsError }, { data: gifts, error: giftsError }] = event ? await Promise.all([
     db.from("guests").select("id, display_name, email, token, rsvp_status, invited_at").eq("event_id", event.id).order("display_name").order("id"),
-    db.from("gifts").select("id, name, description, url, reserved_by_guest_id").eq("event_id", event.id).order("name").order("id"),
+    db.from("gifts").select("id, name, description, url, reserved_by_guest_id").eq("event_id", event.id).order("created_at").order("id"),
   ]) : [{ data: [], error: null }, { data: [], error: null }];
   if (guestsError || giftsError || !guests || !gifts) throw new Error("Unable to load event details");
   let imageUrl: string | null = null;
