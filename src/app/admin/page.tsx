@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { adminMessages } from "@/lib/i18n/admin";
@@ -54,12 +55,12 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
     else counts.pending++;
   }
   return <DraftGuard locale={locale} warning={t.unsaved}>
-    <header className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-3xl font-bold">{t.title}</h1><form action={signOut}><button className={outline}>{t.signOut}</button></form></header>
+    <header className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-3xl font-bold">{t.title}</h1><form action={signOut}><SubmitButton className={outline}>{t.signOut}</SubmitButton></form></header>
     {notice && <p role="status" className="rounded bg-slate-100 p-3">{notice}</p>}
     {events.length > 1 && <nav aria-label={t.selectEvent} className="flex flex-wrap gap-3">{events.map(item => <a key={item.id} href={`/admin?event=${item.id}`} className="underline" aria-current={item.id === event?.id ? "page" : undefined}>{item.title}</a>)}</nav>}
     <details className="rounded border p-4" open={!event}><summary className="cursor-pointer font-semibold">{t.newEvent}</summary>
       {!event && <p>{t.noEvent}</p>}
-      <form action={createEvent} className="mt-3 flex flex-wrap items-end gap-3"><label>{t.eventTitle}<input className={input} name="title" required maxLength={200} /></label><label>{t.locale}<select className={input} name="locale" defaultValue="es"><option value="es">{t.spanish}</option><option value="en">{t.english}</option></select></label><button className={button}>{t.createEvent}</button></form>
+      <form action={createEvent} className="mt-3 flex flex-wrap items-end gap-3"><label>{t.eventTitle}<input className={input} name="title" required maxLength={200} /></label><label>{t.locale}<select className={input} name="locale" defaultValue="es"><option value="es">{t.spanish}</option><option value="en">{t.english}</option></select></label><SubmitButton className={button}>{t.createEvent}</SubmitButton></form>
     </details>
     {event && <>
       <section className="space-y-4"><h2 className="text-2xl font-semibold">{t.event}</h2>
@@ -73,12 +74,12 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
           <label className="block">{t.locale}<select className={input} name="locale" defaultValue={locale}><option value="es">{t.spanish}</option><option value="en">{t.english}</option></select></label>
           <label className="block">{t.content}<textarea className={input} name="content" defaultValue={event.invitation_content ?? ""} maxLength={10000} /></label>
           <label className="block">{t.deadline}<input className={input} type="datetime-local" name="deadline" defaultValue={event.rsvp_deadline ? new Date(event.rsvp_deadline).toISOString().slice(0, 16) : ""} /></label>
-          <label className="block">{t.image}<input className={input} type="file" name="image" accept="image/jpeg,image/png,image/webp" /></label><button className={button}>{t.save}</button>
+          <label className="block">{t.image}<input className={input} type="file" name="image" accept="image/jpeg,image/png,image/webp" /></label><SubmitButton className={button}>{t.save}</SubmitButton>
         </form>
       </section>
       <section className="space-y-4"><h2 className="text-2xl font-semibold">{t.guests}</h2>
         {!emailEnabled && <p>{t.emailDisabled}</p>}
-        <form action={sendInvitations}><input type="hidden" name="eventId" value={event.id} /><button className={button} disabled={!emailEnabled} style={{ opacity: emailEnabled ? 1 : 0.5 }}>{t.sendInvitations}</button></form>
+        <form action={sendInvitations}><input type="hidden" name="eventId" value={event.id} /><SubmitButton className={button} disabled={!emailEnabled} style={{ opacity: emailEnabled ? 1 : 0.5 }}>{t.sendInvitations}</SubmitButton></form>
         {guests.length === 0 && <p>{t.noGuests}</p>}
         <SectionEditor key={`guests-${event.id}`} section="guests" eventId={event.id} locale={locale}
           rows={guests.map(guest => {
@@ -95,12 +96,12 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                 {guest.email && <form action={sendInvitations}>
                   <input type="hidden" name="eventId" value={event.id} />
                   <input type="hidden" name="guestId" value={guest.id} />
-                  <button className={outline} disabled={!emailEnabled} style={{ opacity: emailEnabled ? 1 : 0.5 }}>{t.resend}</button>
+                  <SubmitButton className={outline} disabled={!emailEnabled} style={{ opacity: emailEnabled ? 1 : 0.5 }}>{t.resend}</SubmitButton>
                 </form>}
                 <form action={deleteGuest}>
                   <input type="hidden" name="eventId" value={event.id} />
                   <input type="hidden" name="guestId" value={guest.id} />
-                  <button className={outline}>{t.remove}</button>
+                  <SubmitButton className={outline}>{t.remove}</SubmitButton>
                 </form>
               </>,
             };
@@ -123,13 +124,13 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                       {availableFamilies.map(guest => <option key={guest.id} value={guest.id}>{guest.display_name}</option>)}
                     </select>
                   </label>
-                  <button className={outline}>{t.assignGift}</button>
+                  <SubmitButton className={outline}>{t.assignGift}</SubmitButton>
                 </form>
               )}
               <form action={deleteGift}>
                 <input type="hidden" name="eventId" value={event.id} />
                 <input type="hidden" name="giftId" value={gift.id} />
-                <button className={outline}>{t.remove}</button>
+                <SubmitButton className={outline}>{t.remove}</SubmitButton>
               </form>
             </>,
           }))} />

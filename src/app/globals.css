@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 @layer base {
+  body {
+    background-color: #fff8e8;
+  }
+
   button:enabled:hover {
     cursor: pointer;
   }
@@ -8,4 +12,8 @@
   button:disabled:hover {
     cursor: not-allowed;
   }
+}
+
+button {
+  border-radius: 9999px;
 }

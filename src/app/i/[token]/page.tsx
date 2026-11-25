@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import { notFound } from "next/navigation";
 import { guestMessages, type GuestLocale } from "@/lib/i18n/guest";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -8,6 +9,12 @@ export const metadata = { robots: { index: false, follow: false }, referrer: "no
 
 const noticeKeys = ["saved", "deadlinePassed", "taken", "alreadyReserved", "released", "reservedSuccess", "failed"] as const;
 type Notice = (typeof noticeKeys)[number];
+
+const rsvpColors = {
+  yes: "border-green-700 bg-green-200 text-green-950",
+  no: "border-red-700 bg-red-200 text-red-950",
+  other: "border-yellow-700 bg-yellow-200 text-yellow-950",
+};
 
 export default async function InvitationPage({
   params,
@@ -67,11 +74,11 @@ export default async function InvitationPage({
         {closed && <p>{text.deadlinePassed}</p>}
         <form action={rsvpAction} className="flex flex-wrap gap-3">
           {(["yes", "no", "other"] as const).map((status) => (
-            <button key={status} name="status" value={status} disabled={closed}
+            <SubmitButton key={status} name="status" value={status} disabled={closed}
               aria-pressed={guest.rsvp_status === status}
-              className="rounded border border-slate-700 px-4 py-3 aria-pressed:bg-slate-800 aria-pressed:text-white disabled:opacity-50">
+              className={`border px-4 py-3 ring-current ring-offset-2 aria-pressed:ring-2 disabled:opacity-60 ${rsvpColors[status]}`}>
               {text[status]}
-            </button>
+            </SubmitButton>
           ))}
         </form>
       </section>
@@ -97,10 +104,10 @@ export default async function InvitationPage({
                 {(mine || available) && (
                   <form action={giftAction}>
                     <input type="hidden" name="giftId" value={gift.id} />
-                    <button name="operation" value={mine ? "release" : "reserve"}
+                    <SubmitButton name="operation" value={mine ? "release" : "reserve"}
                       className="rounded bg-slate-800 px-4 py-3 text-white">
                       {mine ? text.release : text.reserve}
-                    </button>
+                    </SubmitButton>
                   </form>
                 )}
               </li>
@@ -115,7 +122,7 @@ export default async function InvitationPage({
                 className="mt-1 block w-full rounded border border-slate-400 p-2 font-normal" />
             </label>
             <p className="text-sm">{text.otherGiftVisibility}</p>
-            <button className="rounded bg-slate-800 px-4 py-3 text-white">{text.reserve}</button>
+            <SubmitButton className="rounded bg-slate-800 px-4 py-3 text-white">{text.reserve}</SubmitButton>
           </form>
         )}
       </section>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { SubmitButton } from "@/components/submit-button";
 import { saveSection } from "@/app/admin/actions";
 import { adminMessages } from "@/lib/i18n/admin";
 
@@ -104,9 +105,9 @@ export function SectionEditor({ eventId, section, rows, locale }: {
         setAdded(current => [...current, { id, values: { name: "" } }]);
         setResult(null);
       }}>{t.add}</button>
-      <button className={button} disabled={!dirty || saving}>
+      <SubmitButton className={button} disabled={!dirty} loading={saving}>
         {section === "guests" ? t.saveGuests : t.saveGifts}
-      </button>
+      </SubmitButton>
       {result?.status === "saved" && <p role="status">{t.saved}</p>}
       {result?.status === "error" && <p role="alert">{t.error}</p>}
     </form>

@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin/auth";
 import { requestMagicLink } from "./actions";
@@ -16,7 +17,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
     {notice === "error" && <p role="alert">{t.loginError}</p>}
     <form action={requestMagicLink} className="space-y-3">
       <label className="block">{t.loginEmail} <input className="mt-1 block w-full rounded border p-2" type="email" name="email" required autoComplete="email" /></label>
-      <button className="rounded bg-slate-800 px-4 py-2 text-white">{t.sendLink}</button>
+      <SubmitButton className="rounded bg-slate-800 px-4 py-2 text-white">{t.sendLink}</SubmitButton>
     </form>
   </main>;
 }
