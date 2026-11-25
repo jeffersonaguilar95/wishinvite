@@ -1,6 +1,6 @@
 export const guestMessages = {
   es: {
-    greeting: (name: string) => `Hola, familia ${name}`,
+    greeting: (name: string) => `Hola, ${name}`,
     invitation: "Invitación",
     attendance: "¿Podréis asistir?",
     yes: "Asistiremos",
@@ -27,7 +27,7 @@ export const guestMessages = {
     link: "Ver regalo",
   },
   en: {
-    greeting: (name: string) => `Hello, ${name} family`,
+    greeting: (name: string) => `Hello, ${name}`,
     invitation: "Invitation",
     attendance: "Can you attend?",
     yes: "We will attend",
