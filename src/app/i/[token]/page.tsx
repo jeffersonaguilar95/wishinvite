@@ -97,10 +97,16 @@ export default async function InvitationPage({
             }
             return (
               <li key={gift.id} className="space-y-2 rounded-lg border border-slate-300 p-4">
-                <h3 className="text-lg font-semibold">{available ? gift.name : <s>{gift.name}</s>}</h3>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <h3 className="min-w-0 wrap-break-word text-lg font-semibold">
+                    {available ? gift.name : <s>{gift.name}</s>}
+                  </h3>
+                  <span className="rounded-full bg-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700">
+                    {available ? text.available : text.reserved}{mine && ` · ${text.mine}`}
+                  </span>
+                </div>
                 {gift.description && <p>{gift.description}</p>}
                 {safeUrl && <a className="underline" href={safeUrl} target="_blank" rel="noopener noreferrer">{text.link}</a>}
-                <p>{available ? text.available : text.reserved}{mine && ` · ${text.mine}`}</p>
                 {(mine || available) && (
                   <form action={giftAction}>
                     <input type="hidden" name="giftId" value={gift.id} />
