@@ -101,12 +101,25 @@ export default async function InvitationPage({
                   <h3 className="min-w-0 wrap-break-word text-lg font-semibold">
                     {available ? gift.name : <s>{gift.name}</s>}
                   </h3>
+                  {safeUrl && (
+                    <span className="group relative inline-flex">
+                      <a href={safeUrl} target="_blank" rel="noopener noreferrer" aria-label={text.link}
+                        className="grid size-9 place-items-center rounded-full text-slate-700 hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"
+                          strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-5">
+                          <path d="M10 13a4.5 4.5 0 0 0 6.36 0l3.18-3.18a4.5 4.5 0 0 0-6.36-6.36l-1.59 1.59m2.41 5.95a4.5 4.5 0 0 0-6.36 0l-3.18 3.18a4.5 4.5 0 0 0 6.36 6.36l1.59-1.59" />
+                        </svg>
+                      </a>
+                      <span aria-hidden="true" className="pointer-events-none invisible absolute bottom-full right-0 z-10 mb-1 whitespace-nowrap rounded bg-slate-900 px-2 py-1 text-xs text-white group-hover:visible group-focus-within:visible">
+                        {text.link}
+                      </span>
+                    </span>
+                  )}
                   <span className="rounded-full bg-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700">
                     {available ? text.available : text.reserved}{mine && ` · ${text.mine}`}
                   </span>
                 </div>
                 {gift.description && <p>{gift.description}</p>}
-                {safeUrl && <a className="underline" href={safeUrl} target="_blank" rel="noopener noreferrer">{text.link}</a>}
                 {(mine || available) && (
                   <form action={giftAction}>
                     <input type="hidden" name="giftId" value={gift.id} />
