@@ -78,11 +78,14 @@ export function SectionEditor({ eventId, section, rows, locale }: {
         const invalid = result?.status === "invalid" && result.row === row.id;
         return <li key={row.id} className="space-y-3 rounded border p-4">
           <fieldset disabled={saving} className="flex flex-wrap items-end gap-3">
-            {fields.map(([key, label, type, max]) => <label key={key}>{label}
-              <input form={formId} className={input} type={type} maxLength={max} required={key === "name"}
-                aria-describedby={invalid ? `error-${row.id}` : undefined}
-                value={values[key] ?? ""} onChange={event => update(row, key, event.target.value)} />
-            </label>)}
+            {fields.map(([key, label, type, max]) => (
+              <label key={key} className={key === "description" ? "min-w-48 flex-1" : undefined}>
+                {label}
+                <input form={formId} className={input} type={type} maxLength={max} required={key === "name"}
+                  aria-describedby={invalid ? `error-${row.id}` : undefined}
+                  value={values[key] ?? ""} onChange={event => update(row, key, event.target.value)} />
+              </label>
+            ))}
           </fieldset>
           {invalid && <p id={`error-${row.id}`} role="alert">{t.invalid}</p>}
           {row.actions}
