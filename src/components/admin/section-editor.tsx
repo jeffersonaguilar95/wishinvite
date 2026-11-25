@@ -92,7 +92,7 @@ export function SectionEditor({ eventId, section, rows, locale }: {
           ? <RemoveRowButton label={section === "gifts" ? t.removeGift : t.removeGuest}
               disabled={saving} onClick={() => removeDraft(row.id)} />
           : row.endAction;
-        return <li key={row.id} className="flex items-center gap-3 rounded border p-4">
+        return <li key={row.id} className="flex items-start gap-3 rounded border p-4">
           <div className="min-w-0 flex-1 space-y-3">
             <fieldset disabled={saving} className="flex min-w-0 flex-wrap items-end gap-3">
               {fields.map(([key, label, type, max]) => (
@@ -108,7 +108,7 @@ export function SectionEditor({ eventId, section, rows, locale }: {
             {invalid && <p id={`error-${row.id}`} role="alert">{t.invalid}</p>}
             {row.actions}
           </div>
-          {endAction && <div className="shrink-0">{endAction}</div>}
+          {endAction && <div className="mt-7 shrink-0">{endAction}</div>}
         </li>;
       })}
     </ul>

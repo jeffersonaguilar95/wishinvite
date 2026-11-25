@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
-export function CopyLink({ url, fieldLabel, label, copied, failed }: {
+export function CopyLink({ url, fieldLabel, label, copied, failed, endAction }: {
   url: string;
   fieldLabel: string;
   label: string;
   copied: string;
   failed: string;
+  endAction: ReactNode;
 }) {
   const [status, setStatus] = useState("");
 
@@ -18,7 +19,7 @@ export function CopyLink({ url, fieldLabel, label, copied, failed }: {
         <input readOnly value={url} className="mt-1 block w-full rounded border border-slate-400 p-2" />
       </label>
       <div className="group relative">
-        <button type="button" aria-label={label} className="grid size-10 place-items-center border border-slate-600"
+        <button type="button" aria-label={label} className="grid size-10 place-items-center border border-slate-600 bg-transparent enabled:hover:bg-slate-200"
           onBlur={() => setStatus("")} onClick={async () => {
             try {
               await navigator.clipboard.writeText(url);
@@ -38,6 +39,7 @@ export function CopyLink({ url, fieldLabel, label, copied, failed }: {
         </span>
         <span role="status" className="sr-only">{status}</span>
       </div>
+      {endAction}
     </div>
   );
 }

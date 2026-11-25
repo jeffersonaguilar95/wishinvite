@@ -89,7 +89,12 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
               id: guest.id,
               values: { name: guest.display_name, email: guest.email ?? "" },
               inlineField: <CopyLink url={link} fieldLabel={t.invitationLink} label={t.copy}
-                copied={t.copied} failed={t.copyFailed} />,
+                copied={t.copied} failed={t.copyFailed}
+                endAction={<form action={deleteGuest} className="flex">
+                  <input type="hidden" name="eventId" value={event.id} />
+                  <input type="hidden" name="guestId" value={guest.id} />
+                  <RemoveRowButton label={t.removeGuest} />
+                </form>} />,
               actions: <>
                 {guest.invited_at && <p>{t.invitationSentAt}: <time dateTime={guest.invited_at}>{new Date(guest.invited_at).toLocaleString(locale === "es" ? "es-ES" : "en-GB", { timeZone: "UTC" })} UTC</time></p>}
                 {guest.email && <form action={sendInvitations}>
@@ -98,11 +103,6 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                   <SubmitButton className={outline} disabled={!emailEnabled} style={{ opacity: emailEnabled ? 1 : 0.5 }}>{t.resend}</SubmitButton>
                 </form>}
               </>,
-              endAction: <form action={deleteGuest}>
-                <input type="hidden" name="eventId" value={event.id} />
-                <input type="hidden" name="guestId" value={guest.id} />
-                <RemoveRowButton label={t.removeGuest} />
-              </form>,
             };
           })} />
       </section>

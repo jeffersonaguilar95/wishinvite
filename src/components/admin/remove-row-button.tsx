@@ -7,7 +7,7 @@ export function RemoveRowButton({ label, disabled, onClick }: {
   disabled?: boolean;
   onClick?: () => void;
 }) {
-  const className = "grid size-10 place-items-center border border-slate-600 text-slate-800 enabled:hover:border-red-700 enabled:hover:bg-red-50 enabled:hover:text-red-800 disabled:opacity-50";
+  const className = "grid size-10 place-items-center border border-red-600 text-red-700 enabled:hover:border-red-700 enabled:hover:bg-red-50 enabled:hover:text-red-800 disabled:opacity-50";
   const icon = (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"
       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-5">
