@@ -2,7 +2,7 @@
 
 import { SubmitButton } from "@/components/submit-button";
 
-export function RemoveGiftButton({ label, disabled, onClick }: {
+export function RemoveRowButton({ label, disabled, onClick }: {
   label: string;
   disabled?: boolean;
   onClick?: () => void;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
-import { RemoveGiftButton } from "./remove-gift-button";
+import { RemoveRowButton } from "./remove-row-button";
 import { SubmitButton } from "@/components/submit-button";
 import { saveSection } from "@/app/admin/actions";
 import { adminMessages } from "@/lib/i18n/admin";
@@ -88,8 +88,9 @@ export function SectionEditor({ eventId, section, rows, locale }: {
         const values = drafts[row.id] ?? row.values;
         const invalid = result?.status === "invalid" && result.row === row.id;
         const isNew = row.id.startsWith("new-");
-        const endAction = isNew && section === "gifts"
-          ? <RemoveGiftButton label={t.removeGift} disabled={saving} onClick={() => removeDraft(row.id)} />
+        const endAction = isNew
+          ? <RemoveRowButton label={section === "gifts" ? t.removeGift : t.removeGuest}
+              disabled={saving} onClick={() => removeDraft(row.id)} />
           : row.endAction;
         return <li key={row.id} className="flex items-center gap-3 rounded border p-4">
           <div className="min-w-0 flex-1 space-y-3">
@@ -105,11 +106,6 @@ export function SectionEditor({ eventId, section, rows, locale }: {
             </fieldset>
             {invalid && <p id={`error-${row.id}`} role="alert">{t.invalid}</p>}
             {row.actions}
-            {isNew && section === "guests" && (
-              <button type="button" className={outline} disabled={saving} onClick={() => removeDraft(row.id)}>
-                {t.remove}
-              </button>
-            )}
           </div>
           {endAction && <div className="shrink-0">{endAction}</div>}
         </li>;
