@@ -55,6 +55,9 @@ export default async function InvitationPage({
   const giftAction = changeReservation.bind(null, token);
   const customGiftAction = reserveCustomGift.bind(null, token);
   const hasReservation = gifts.some(gift => gift.reserved_by_guest_id === guest.id);
+  const orderedGifts = gifts.toSorted((first, second) =>
+    Number(first.reserved_by_guest_id !== null) - Number(second.reserved_by_guest_id !== null),
+  );
 
   return (
     <main lang={locale} className="mx-auto min-h-screen max-w-2xl space-y-8 px-4 py-8 text-slate-900">
@@ -86,7 +89,7 @@ export default async function InvitationPage({
         <h2 id="gifts-heading" className="text-2xl font-semibold">{text.gifts}</h2>
         {event.gift_list_description && <p className="whitespace-pre-wrap wrap-break-word">{event.gift_list_description}</p>}
         <ul className="space-y-3">
-          {gifts.map((gift) => {
+          {orderedGifts.map((gift) => {
             const mine = gift.reserved_by_guest_id === guest.id;
             const available = gift.reserved_by_guest_id === null;
             let safeUrl: string | null = null;
