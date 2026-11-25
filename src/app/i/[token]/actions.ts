@@ -33,31 +33,36 @@ export async function updateRsvp(token: string, formData: FormData) {
   return finish(token, data ? notice : "deadlinePassed");
 }
 
+function reservationResult(token: string, result: "alreadyReserved" | "taken" | "failed" | "reservedSuccess" | "released") {
+  revalidatePath(`/i/${encodeURIComponent(token)}`);
+  return result;
+}
+
 export async function changeReservation(token: string, formData: FormData) {
   await validateGuest(token);
   const giftId = formData.get("giftId");
   const operation = formData.get("operation");
   if (typeof giftId !== "string" || !uuidPattern.test(giftId) ||
-      (operation !== "reserve" && operation !== "release")) return finish(token, "failed");
+      (operation !== "reserve" && operation !== "release")) return reservationResult(token, "failed");
 
   const { data, error } = await createServiceClient().rpc(
     operation === "reserve" ? "reserve_gift" : "release_gift",
     { p_token: token, p_gift_id: giftId },
   );
-  if (error) return finish(token, error.code === "23505" ? "alreadyReserved" : "failed");
-  if (!data) return finish(token, operation === "reserve" ? "taken" : "failed");
-  return finish(token, operation === "reserve" ? "reservedSuccess" : "released");
+  if (error) return reservationResult(token, error.code === "23505" ? "alreadyReserved" : "failed");
+  if (!data) return reservationResult(token, operation === "reserve" ? "taken" : "failed");
+  return reservationResult(token, operation === "reserve" ? "reservedSuccess" : "released");
 }
 
 export async function reserveCustomGift(token: string, formData: FormData) {
   await validateGuest(token);
   const value = formData.get("name");
   const name = typeof value === "string" ? value.trim() : "";
-  if (!name || name.length > 200) return finish(token, "failed");
+  if (!name || name.length > 200) return reservationResult(token, "failed");
 
   const { data, error } = await createServiceClient().rpc("reserve_custom_gift", {
     p_token: token, p_name: name,
   });
-  if (error) return finish(token, error.code === "23505" ? "alreadyReserved" : "failed");
-  return finish(token, data ? "reservedSuccess" : "failed");
+  if (error) return reservationResult(token, error.code === "23505" ? "alreadyReserved" : "failed");
+  return reservationResult(token, data ? "reservedSuccess" : "failed");
 }

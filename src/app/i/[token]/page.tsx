@@ -4,12 +4,13 @@ import { SubmitButton } from "@/components/submit-button";
 import { notFound } from "next/navigation";
 import { guestMessages, type GuestLocale } from "@/lib/i18n/guest";
 import { createServiceClient } from "@/lib/supabase/service";
+import { ReservationForm } from "./reservation-form";
 import { changeReservation, reserveCustomGift, updateRsvp } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false, follow: false }, referrer: "no-referrer" as const };
 
-const noticeKeys = ["rsvpYes", "rsvpNo", "rsvpOther", "deadlinePassed", "taken", "alreadyReserved", "released", "reservedSuccess", "failed"] as const;
+const noticeKeys = ["rsvpYes", "rsvpNo", "rsvpOther", "deadlinePassed", "failed"] as const;
 type Notice = (typeof noticeKeys)[number];
 
 const rsvpColors = {
@@ -72,7 +73,7 @@ export default async function InvitationPage({
       )}
       {event.invitation_content && <p className="whitespace-pre-wrap">{event.invitation_content}</p>}
       {notice && message && <FlashToast notice={notice} path={`/i/${encodeURIComponent(token)}`} text={message}
-        error={["failed", "taken", "alreadyReserved", "deadlinePassed"].includes(notice.code)} />}
+        error={["failed", "deadlinePassed"].includes(notice.code)} />}
       <section className="space-y-3" aria-labelledby="rsvp-heading">
         <h2 id="rsvp-heading" className="text-2xl font-semibold">{text.attendance}</h2>
         {closed && <p>{text.deadlinePassed}</p>}
@@ -128,20 +129,20 @@ export default async function InvitationPage({
                 </div>
                 {gift.description && <p>{gift.description}</p>}
                 {(mine || (available && !hasReservation)) && (
-                  <form action={giftAction}>
+                  <ReservationForm action={giftAction} locale={locale}>
                     <input type="hidden" name="giftId" value={gift.id} />
                     <SubmitButton name="operation" value={mine ? "release" : "reserve"}
                       className="rounded bg-slate-800 enabled:hover:bg-slate-700 px-4 py-3 text-white">
                       {mine ? text.release : text.reserve}
                     </SubmitButton>
-                  </form>
+                  </ReservationForm>
                 )}
               </li>
             );
           })}
         </ul>
         {!hasReservation && (
-          <form action={customGiftAction} className="space-y-2 rounded-lg border border-slate-300 p-4">
+          <ReservationForm action={customGiftAction} locale={locale} className="space-y-2 rounded-lg border border-slate-300 p-4">
             <label className="block font-semibold">
               {text.otherGift}
               <input name="name" required maxLength={200} placeholder={text.otherGiftName}
@@ -149,7 +150,7 @@ export default async function InvitationPage({
             </label>
             <p className="text-sm">{text.otherGiftVisibility}</p>
             <SubmitButton className="rounded bg-slate-800 enabled:hover:bg-slate-700 px-4 py-3 text-white">{text.reserve}</SubmitButton>
-          </form>
+          </ReservationForm>
         )}
       </section>
     </main>
