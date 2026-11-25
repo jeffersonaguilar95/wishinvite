@@ -1,3 +1,4 @@
+import { RemoveGiftButton } from "@/components/admin/remove-gift-button";
 import { SubmitButton } from "@/components/submit-button";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -127,12 +128,12 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                   <SubmitButton className={outline}>{t.assignGift}</SubmitButton>
                 </form>
               )}
-              <form action={deleteGift}>
-                <input type="hidden" name="eventId" value={event.id} />
-                <input type="hidden" name="giftId" value={gift.id} />
-                <SubmitButton className={outline}>{t.remove}</SubmitButton>
-              </form>
             </>,
+            endAction: <form action={deleteGift}>
+              <input type="hidden" name="eventId" value={event.id} />
+              <input type="hidden" name="giftId" value={gift.id} />
+              <RemoveGiftButton label={t.removeGift} />
+            </form>,
           }))} />
       </section>
       <section className="space-y-4"><h2 className="text-2xl font-semibold">{t.responses}</h2>

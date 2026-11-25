@@ -1,6 +1,7 @@
 export const adminMessages = {
   es: {
     saveGuests: "Guardar invitados",
+    removeGift: "Eliminar regalo",
     saveGifts: "Guardar regalos",
     unsaved: "Hay cambios sin guardar en el panel. ¿Quieres continuar?",
     other: "Aún no lo saben",
@@ -12,6 +13,7 @@ export const adminMessages = {
   },
   en: {
     saveGuests: "Save guests",
+    removeGift: "Delete gift",
     saveGifts: "Save gifts",
     unsaved: "There are unsaved changes on this page. Do you want to continue?",
     other: "Still unsure",

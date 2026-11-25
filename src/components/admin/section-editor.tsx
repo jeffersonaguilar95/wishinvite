@@ -1,12 +1,13 @@
 "use client";
 
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { RemoveGiftButton } from "./remove-gift-button";
 import { SubmitButton } from "@/components/submit-button";
 import { saveSection } from "@/app/admin/actions";
 import { adminMessages } from "@/lib/i18n/admin";
 
 type Values = { name: string; email?: string; description?: string; url?: string };
-type Row = { id: string; values: Values; actions?: ReactNode };
+type Row = { id: string; values: Values; actions?: ReactNode; endAction?: ReactNode };
 
 const input = "mt-1 block w-full rounded border border-slate-400 p-2";
 const button = "rounded bg-slate-800 px-4 py-2 text-white disabled:opacity-50";
@@ -38,6 +39,16 @@ export function SectionEditor({ eventId, section, rows, locale }: {
       const values = { ...(current[row.id] ?? row.values), [field]: value };
       if (fields.every(([key]) => (values[key] ?? "") === (row.values[key] ?? ""))) delete next[row.id];
       else next[row.id] = values;
+      return next;
+    });
+    setResult(null);
+  }
+
+  function removeDraft(rowId: string) {
+    setAdded(current => current.filter(item => item.id !== rowId));
+    setDrafts(current => {
+      const next = { ...current };
+      delete next[rowId];
       return next;
     });
     setResult(null);
@@ -76,28 +87,31 @@ export function SectionEditor({ eventId, section, rows, locale }: {
       {allRows.map(row => {
         const values = drafts[row.id] ?? row.values;
         const invalid = result?.status === "invalid" && result.row === row.id;
-        return <li key={row.id} className="space-y-3 rounded border p-4">
-          <fieldset disabled={saving} className="flex flex-wrap items-end gap-3">
-            {fields.map(([key, label, type, max]) => (
-              <label key={key} className={key === "description" ? "min-w-48 flex-1" : undefined}>
-                {label}
-                <input form={formId} className={input} type={type} maxLength={max} required={key === "name"}
-                  aria-describedby={invalid ? `error-${row.id}` : undefined}
-                  value={values[key] ?? ""} onChange={event => update(row, key, event.target.value)} />
-              </label>
-            ))}
-          </fieldset>
-          {invalid && <p id={`error-${row.id}`} role="alert">{t.invalid}</p>}
-          {row.actions}
-          {row.id.startsWith("new-") && <button type="button" className={outline} disabled={saving} onClick={() => {
-            setAdded(current => current.filter(item => item.id !== row.id));
-            setDrafts(current => {
-              const next = { ...current };
-              delete next[row.id];
-              return next;
-            });
-            setResult(null);
-          }}>{t.remove}</button>}
+        const isNew = row.id.startsWith("new-");
+        const endAction = isNew && section === "gifts"
+          ? <RemoveGiftButton label={t.removeGift} disabled={saving} onClick={() => removeDraft(row.id)} />
+          : row.endAction;
+        return <li key={row.id} className="flex items-center gap-3 rounded border p-4">
+          <div className="min-w-0 flex-1 space-y-3">
+            <fieldset disabled={saving} className="flex min-w-0 flex-wrap items-end gap-3">
+              {fields.map(([key, label, type, max]) => (
+                <label key={key} className={key === "description" ? "min-w-[min(100%,12rem)] flex-1" : "max-w-full"}>
+                  {label}
+                  <input form={formId} className={input} type={type} maxLength={max} required={key === "name"}
+                    aria-describedby={invalid ? `error-${row.id}` : undefined}
+                    value={values[key] ?? ""} onChange={event => update(row, key, event.target.value)} />
+                </label>
+              ))}
+            </fieldset>
+            {invalid && <p id={`error-${row.id}`} role="alert">{t.invalid}</p>}
+            {row.actions}
+            {isNew && section === "guests" && (
+              <button type="button" className={outline} disabled={saving} onClick={() => removeDraft(row.id)}>
+                {t.remove}
+              </button>
+            )}
+          </div>
+          {endAction && <div className="shrink-0">{endAction}</div>}
         </li>;
       })}
     </ul>
