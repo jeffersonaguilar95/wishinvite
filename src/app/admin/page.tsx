@@ -40,7 +40,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   if (!appUrl) throw new Error("App URL is missing");
   const [{ data: guests, error: guestsError }, { data: gifts, error: giftsError }] = event ? await Promise.all([
-    db.from("guests").select("id, display_name, email, token, rsvp_status, invited_at").eq("event_id", event.id).order("display_name").order("id"),
+    db.from("guests").select("id, display_name, email, token, rsvp_status, invited_at").eq("event_id", event.id).order("created_at").order("id"),
     db.from("gifts").select("id, name, description, url, reserved_by_guest_id").eq("event_id", event.id).order("created_at").order("id"),
   ]) : [{ data: [], error: null }, { data: [], error: null }];
   if (guestsError || giftsError || !guests || !gifts) throw new Error("Unable to load event details");
