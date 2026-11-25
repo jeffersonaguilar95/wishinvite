@@ -117,7 +117,7 @@ export function SectionEditor({ eventId, section, rows, locale }: {
     </ul>
     <form id={formId} onSubmit={submit} data-section-editor="" data-dirty={dirty} data-saving={saving}
       className="flex flex-wrap items-center gap-3">
-      <button type="button" className={outline} disabled={saving} onClick={() => {
+      <button type="button" className={`${outline} enabled:hover:bg-slate-200`} disabled={saving} onClick={() => {
         const id = `new-${++nextRow.current}`;
         setAdded(current => [...current, { id, values: { name: "" } }]);
         setResult(null);
