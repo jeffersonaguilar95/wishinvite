@@ -88,11 +88,9 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
             return {
               id: guest.id,
               values: { name: guest.display_name, email: guest.email ?? "" },
+              inlineField: <CopyLink url={link} fieldLabel={t.invitationLink} label={t.copy}
+                copied={t.copied} failed={t.copyFailed} />,
               actions: <>
-                <div className="flex flex-wrap gap-2">
-                  <input aria-label={t.copy} readOnly value={link} className="min-w-0 flex-1 rounded border p-2" />
-                  <CopyLink url={link} label={t.copy} copied={t.copied} failed={t.copyFailed} />
-                </div>
                 {guest.invited_at && <p>{t.invitationSentAt}: <time dateTime={guest.invited_at}>{new Date(guest.invited_at).toLocaleString(locale === "es" ? "es-ES" : "en-GB", { timeZone: "UTC" })} UTC</time></p>}
                 {guest.email && <form action={sendInvitations}>
                   <input type="hidden" name="eventId" value={event.id} />
