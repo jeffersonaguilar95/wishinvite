@@ -78,6 +78,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
           <label className="block">{t.image}<input className={input} type="file" name="image" accept="image/jpeg,image/png,image/webp" /></label><SubmitButton className={button}>{t.save}</SubmitButton>
         </form>
       </section>
+      <hr className="border-slate-200" />
       <section className="space-y-4"><h2 className="text-2xl font-semibold">{t.guests}</h2>
         {!emailEnabled && <p>{t.emailDisabled}</p>}
         <form action={sendInvitations}><input type="hidden" name="eventId" value={event.id} /><SubmitButton className={button} disabled={!emailEnabled} style={{ opacity: emailEnabled ? 1 : 0.5 }}>{t.sendInvitations}</SubmitButton></form>
@@ -106,6 +107,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
             };
           })} />
       </section>
+      <hr className="border-slate-200" />
       <section className="space-y-4"><h2 className="text-2xl font-semibold">{t.gifts}</h2>
         {gifts.length === 0 && <p>{t.noGifts}</p>}
         <SectionEditor key={`gifts-${event.id}`} section="gifts" eventId={event.id} locale={locale}
@@ -134,6 +136,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
             </form>,
           }))} />
       </section>
+      <hr className="border-slate-200" />
       <section className="space-y-4"><h2 className="text-2xl font-semibold">{t.responses}</h2>
         <div className="flex flex-wrap gap-4"><p>{t.confirmed}: {counts.yes}</p><p>{t.declined}: {counts.no}</p><p>{t.other}: {counts.other}</p><p>{t.pending}: {counts.pending}</p></div>
         <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="p-2">{t.family}</th><th className="p-2">{t.response}</th><th className="p-2">{t.gift}</th></tr></thead><tbody>
