@@ -104,9 +104,9 @@ export default async function InvitationPage({
                   {safeUrl && (
                     <span className="group relative inline-flex">
                       <a href={safeUrl} target="_blank" rel="noopener noreferrer" aria-label={text.link}
-                        className="grid size-9 place-items-center rounded-full border border-slate-600 text-slate-700 hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2">
+                        className="grid size-6 place-items-center rounded-full border border-slate-600 text-slate-700 hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"
-                          strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-5">
+                          strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-3.5">
                           <path d="M10 13a4.5 4.5 0 0 0 6.36 0l3.18-3.18a4.5 4.5 0 0 0-6.36-6.36l-1.59 1.59m2.41 5.95a4.5 4.5 0 0 0-6.36 0l-3.18 3.18a4.5 4.5 0 0 0 6.36 6.36l1.59-1.59" />
                         </svg>
                       </a>
