@@ -127,10 +127,19 @@ export async function saveSection(
     }
   }
 
-  if (rows.length) {
+  const description = section === "gifts" && data.has("giftListDescription")
+    ? text(data, "giftListDescription", 10000)
+    : undefined;
+  if (description === null) return { status: "error" };
+
+  if (rows.length || description !== undefined) {
     const { error } = await createServiceClient().rpc(
       section === "guests" ? "save_event_guests" : "save_event_gifts",
-      { p_event_id: eventId, p_rows: rows },
+      {
+        p_event_id: eventId,
+        p_rows: rows,
+        ...(description !== undefined ? { p_gift_list_description: description || null } : {}),
+      },
     );
     if (error) return { status: "error" };
     revalidatePath("/admin");

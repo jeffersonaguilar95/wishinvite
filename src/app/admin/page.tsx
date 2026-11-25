@@ -21,7 +21,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   const db = createServiceClient();
   const query = await searchParams;
   const { data: events, error: eventsError } = await db.from("events")
-    .select("id, title, locale, invitation_content, invitation_image_path, rsvp_deadline")
+    .select("id, title, locale, invitation_content, invitation_image_path, rsvp_deadline, gift_list_description")
     .order("created_at").order("id");
   if (eventsError || !events) throw new Error("Unable to load events");
   const event = events.find(item => item.id === query.event) ?? events[0];
@@ -111,6 +111,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
       <section className="space-y-4"><h2 className="text-2xl font-semibold">{t.gifts}</h2>
         {gifts.length === 0 && <p>{t.noGifts}</p>}
         <SectionEditor key={`gifts-${event.id}`} section="gifts" eventId={event.id} locale={locale}
+          giftListDescription={event.gift_list_description ?? ""}
           rows={gifts.map(gift => ({
             id: gift.id,
             values: { name: gift.name, description: gift.description ?? "", url: gift.url ?? "" },

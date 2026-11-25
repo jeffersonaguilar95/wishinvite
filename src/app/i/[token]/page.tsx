@@ -32,7 +32,7 @@ export default async function InvitationPage({
   if (!guest) notFound();
 
   const [{ data: event, error: eventError }, { data: gifts, error: giftsError }] = await Promise.all([
-    db.from("events").select("title, invitation_content, invitation_image_path, locale, rsvp_deadline")
+    db.from("events").select("title, invitation_content, invitation_image_path, locale, rsvp_deadline, gift_list_description")
       .eq("id", guest.event_id).single(),
     db.from("gifts").select("id, name, description, url, reserved_by_guest_id")
       .eq("event_id", guest.event_id).order("created_at").order("id"),
@@ -84,6 +84,7 @@ export default async function InvitationPage({
       </section>
       <section className="space-y-3" aria-labelledby="gifts-heading">
         <h2 id="gifts-heading" className="text-2xl font-semibold">{text.gifts}</h2>
+        {event.gift_list_description && <p className="whitespace-pre-wrap wrap-break-word">{event.gift_list_description}</p>}
         <ul className="space-y-3">
           {gifts.map((gift) => {
             const mine = gift.reserved_by_guest_id === guest.id;

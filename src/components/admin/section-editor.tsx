@@ -13,21 +13,24 @@ const input = "mt-1 block w-full rounded border border-slate-400 p-2";
 const button = "rounded bg-slate-800 enabled:hover:bg-slate-700 px-4 py-2 text-white disabled:opacity-50";
 const outline = "rounded border border-slate-600 px-3 py-2 disabled:opacity-50";
 
-export function SectionEditor({ eventId, section, rows, locale }: {
+export function SectionEditor({ eventId, section, rows, locale, giftListDescription = "" }: {
   eventId: string;
   section: "guests" | "gifts";
   rows: Row[];
+  giftListDescription?: string;
   locale: keyof typeof adminMessages;
 }) {
   const t = adminMessages[locale];
   const nextRow = useRef(0);
   const [added, setAdded] = useState<Row[]>([]);
   const [drafts, setDrafts] = useState<Record<string, Values>>({});
+  const [descriptionDraft, setDescriptionDraft] = useState<string | null>(null);
   const [result, setResult] = useState<Awaited<ReturnType<typeof saveSection>> | null>(null);
   const [saving, setSaving] = useState(false);
   const formId = `edit-${section}`;
   const allRows = [...rows, ...added];
-  const dirty = added.length > 0 || rows.some(row => drafts[row.id] !== undefined);
+  const descriptionChanged = descriptionDraft !== null && descriptionDraft !== giftListDescription;
+  const dirty = descriptionChanged || added.length > 0 || rows.some(row => drafts[row.id] !== undefined);
   const fields = section === "guests"
     ? ([["name", t.family, "text", 200], ["email", t.email, "email", 254]] as const)
     : ([["name", t.giftName, "text", 200], ["description", t.description, "text", 2000],
@@ -59,6 +62,7 @@ export function SectionEditor({ eventId, section, rows, locale }: {
     if (!dirty || saving) return;
 
     const data = new FormData();
+    if (descriptionChanged) data.set("giftListDescription", descriptionDraft);
     for (const row of allRows) {
       if (!row.id.startsWith("new-") && !drafts[row.id]) continue;
       data.append("rows", row.id);
@@ -74,6 +78,7 @@ export function SectionEditor({ eventId, section, rows, locale }: {
       if (response.status === "saved") {
         setDrafts({});
         setAdded([]);
+        setDescriptionDraft(null);
       }
     } catch {
       setResult({ status: "error" });
@@ -83,6 +88,16 @@ export function SectionEditor({ eventId, section, rows, locale }: {
   }
 
   return <>
+    {section === "gifts" && (
+      <label className="block">
+        {t.giftListDescription}
+        <textarea form={formId} className={input} rows={3} maxLength={10000} disabled={saving}
+          value={descriptionDraft ?? giftListDescription} onChange={event => {
+            setDescriptionDraft(event.target.value);
+            setResult(null);
+          }} />
+      </label>
+    )}
     <ul className="space-y-4">
       {allRows.map(row => {
         const values = drafts[row.id] ?? row.values;
