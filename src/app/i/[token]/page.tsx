@@ -126,7 +126,7 @@ export default async function InvitationPage({
                   </div>
                 </div>
                 {gift.description && <p>{gift.description}</p>}
-                {(mine || available) && (
+                {(mine || (available && !hasReservation)) && (
                   <form action={giftAction}>
                     <input type="hidden" name="giftId" value={gift.id} />
                     <SubmitButton name="operation" value={mine ? "release" : "reserve"}
