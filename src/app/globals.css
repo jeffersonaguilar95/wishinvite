@@ -9,6 +9,18 @@
     cursor: pointer;
   }
 
+  @media (hover: hover) {
+    button:enabled:hover {
+      background-color: #fef3c7;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    button {
+      transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+    }
+  }
+
   button:disabled:hover {
     cursor: not-allowed;
   }

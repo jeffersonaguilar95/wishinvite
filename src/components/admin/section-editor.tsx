@@ -10,7 +10,7 @@ type Values = { name: string; email?: string; description?: string; url?: string
 type Row = { id: string; values: Values; actions?: ReactNode; endAction?: ReactNode };
 
 const input = "mt-1 block w-full rounded border border-slate-400 p-2";
-const button = "rounded bg-slate-800 px-4 py-2 text-white disabled:opacity-50";
+const button = "rounded bg-slate-800 enabled:hover:bg-slate-700 px-4 py-2 text-white disabled:opacity-50";
 const outline = "rounded border border-slate-600 px-3 py-2 disabled:opacity-50";
 
 export function SectionEditor({ eventId, section, rows, locale }: {

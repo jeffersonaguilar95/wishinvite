@@ -11,7 +11,7 @@ import { assignGift, createEvent, deleteGift, deleteGuest, saveEvent, sendInvita
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false, follow: false }, referrer: "no-referrer" as const };
 const input = "mt-1 block w-full rounded border border-slate-400 p-2";
-const button = "rounded bg-slate-800 px-4 py-2 text-white";
+const button = "rounded bg-slate-800 enabled:hover:bg-slate-700 px-4 py-2 text-white";
 const outline = "rounded border border-slate-600 px-3 py-2";
 const notices = ["saved", "invalid", "error", "imageInvalid", "guestReserved", "familyAlreadyReserved", "giftUnavailable", "emailNotConfigured", "emailNoImage", "emailImageError", "emailNone"] as const;
 type Notice = (typeof notices)[number];

@@ -11,9 +11,9 @@ const noticeKeys = ["saved", "deadlinePassed", "taken", "alreadyReserved", "rele
 type Notice = (typeof noticeKeys)[number];
 
 const rsvpColors = {
-  yes: "border-green-700 bg-green-200 text-green-950",
-  no: "border-red-700 bg-red-200 text-red-950",
-  other: "border-yellow-700 bg-yellow-200 text-yellow-950",
+  yes: "border-green-700 bg-green-200 enabled:hover:bg-green-300 text-green-950",
+  no: "border-red-700 bg-red-200 enabled:hover:bg-red-300 text-red-950",
+  other: "border-yellow-700 bg-yellow-200 enabled:hover:bg-yellow-300 text-yellow-950",
 };
 
 export default async function InvitationPage({
@@ -105,7 +105,7 @@ export default async function InvitationPage({
                   <form action={giftAction}>
                     <input type="hidden" name="giftId" value={gift.id} />
                     <SubmitButton name="operation" value={mine ? "release" : "reserve"}
-                      className="rounded bg-slate-800 px-4 py-3 text-white">
+                      className="rounded bg-slate-800 enabled:hover:bg-slate-700 px-4 py-3 text-white">
                       {mine ? text.release : text.reserve}
                     </SubmitButton>
                   </form>
@@ -122,7 +122,7 @@ export default async function InvitationPage({
                 className="mt-1 block w-full rounded border border-slate-400 p-2 font-normal" />
             </label>
             <p className="text-sm">{text.otherGiftVisibility}</p>
-            <SubmitButton className="rounded bg-slate-800 px-4 py-3 text-white">{text.reserve}</SubmitButton>
+            <SubmitButton className="rounded bg-slate-800 enabled:hover:bg-slate-700 px-4 py-3 text-white">{text.reserve}</SubmitButton>
           </form>
         )}
       </section>
