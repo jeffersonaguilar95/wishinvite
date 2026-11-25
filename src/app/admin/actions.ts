@@ -43,7 +43,7 @@ export async function createEvent(data: FormData) {
   const { data: event, error } = await createServiceClient().from("events")
     .insert({ title, locale }).select("id").single();
   if (error || !event) return finish(null, "error");
-  return finish(event.id, "saved");
+  return finish(event.id, "eventCreated");
 }
 
 export async function saveEvent(data: FormData) {
@@ -77,7 +77,7 @@ export async function saveEvent(data: FormData) {
     if (imagePath) await db.storage.from("invitations").remove([imagePath]);
     return finish(eventId, "error");
   }
-  return finish(eventId, "saved");
+  return finish(eventId, "eventSaved");
 }
 
 export async function deleteGuest(data: FormData) {
@@ -88,7 +88,7 @@ export async function deleteGuest(data: FormData) {
     .eq("id", guestId).eq("event_id", eventId).select("id").maybeSingle();
   if (error?.code === "23503") return finish(eventId, "guestReserved");
   if (error || !deleted) return finish(eventId, "error");
-  return finish(eventId, "saved");
+  return finish(eventId, "guestDeleted");
 }
 
 export async function saveSection(
@@ -162,7 +162,7 @@ export async function assignGift(data: FormData) {
   });
   if (error?.code === "23505") return finish(eventId, "familyAlreadyReserved");
   if (error) return finish(eventId, "error");
-  return finish(eventId, reserved ? "saved" : "giftUnavailable");
+  return finish(eventId, reserved ? "giftAssigned" : "giftUnavailable");
 }
 
 export async function deleteGift(data: FormData) {
@@ -172,7 +172,7 @@ export async function deleteGift(data: FormData) {
   const { data: deleted, error } = await createServiceClient().from("gifts").delete()
     .eq("id", giftId).eq("event_id", eventId).select("id").maybeSingle();
   if (error || !deleted) return finish(eventId, "error");
-  return finish(eventId, "saved");
+  return finish(eventId, "giftDeleted");
 }
 
 export async function sendInvitations(data: FormData) {

@@ -80,7 +80,7 @@ export function SectionEditor({ eventId, section, rows, locale, giftListDescript
         setDrafts({});
         setAdded([]);
         setDescriptionDraft(null);
-        showToast({ text: t.saved });
+        showToast({ text: section === "guests" ? t.guestsSaved : t.giftsSaved });
       } else if (response.status === "error") {
         showToast({ text: t.error, error: true });
       }

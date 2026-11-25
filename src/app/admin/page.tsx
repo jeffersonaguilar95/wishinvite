@@ -15,7 +15,8 @@ export const metadata = { robots: { index: false, follow: false }, referrer: "no
 const input = "mt-1 block w-full rounded border border-slate-400 p-2";
 const button = "rounded bg-slate-800 enabled:hover:bg-slate-700 px-4 py-2 text-white";
 const outline = "rounded border border-slate-600 px-3 py-2";
-const notices = ["saved", "invalid", "error", "imageInvalid", "guestReserved", "familyAlreadyReserved", "giftUnavailable", "emailNotConfigured", "emailNoImage", "emailImageError", "emailNone"] as const;
+const successNotices = ["eventCreated", "eventSaved", "guestDeleted", "giftAssigned", "giftDeleted"] as const;
+const notices = [...successNotices, "invalid", "error", "imageInvalid", "guestReserved", "familyAlreadyReserved", "giftUnavailable", "emailNotConfigured", "emailNoImage", "emailImageError", "emailNone"] as const;
 type Notice = (typeof notices)[number];
 
 export default async function Admin({ searchParams }: { searchParams: Promise<{ event?: string }> }) {
@@ -62,7 +63,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   return <DraftGuard locale={locale} warning={t.unsaved}>
     <header className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-3xl font-bold">{t.title}</h1><form action={signOut}><SubmitButton className={outline}>{t.signOut}</SubmitButton></form></header>
     {notice && message && <FlashToast notice={notice} path="/admin" text={message}
-      error={code !== "saved" && code !== "emailResult"} />}
+      error={code !== "emailResult" && !successNotices.some(success => success === code)} />}
     {events.length > 1 && <nav aria-label={t.selectEvent} className="flex flex-wrap gap-3">{events.map(item => <a key={item.id} href={`/admin?event=${item.id}`} className="underline" aria-current={item.id === event?.id ? "page" : undefined}>{item.title}</a>)}</nav>}
     <details className="rounded border p-4" open={!event}><summary className="cursor-pointer font-semibold">{t.newEvent}</summary>
       {!event && <p>{t.noEvent}</p>}

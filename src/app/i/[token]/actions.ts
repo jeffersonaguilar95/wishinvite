@@ -29,7 +29,8 @@ export async function updateRsvp(token: string, formData: FormData) {
     p_token: token, p_status: status,
   });
   if (error) return finish(token, "failed");
-  return finish(token, data ? "saved" : "deadlinePassed");
+  const notice = { yes: "rsvpYes", no: "rsvpNo", other: "rsvpOther" }[status];
+  return finish(token, data ? notice : "deadlinePassed");
 }
 
 export async function changeReservation(token: string, formData: FormData) {

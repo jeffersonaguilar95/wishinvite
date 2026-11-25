@@ -9,7 +9,7 @@ import { changeReservation, reserveCustomGift, updateRsvp } from "./actions";
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false, follow: false }, referrer: "no-referrer" as const };
 
-const noticeKeys = ["saved", "deadlinePassed", "taken", "alreadyReserved", "released", "reservedSuccess", "failed"] as const;
+const noticeKeys = ["rsvpYes", "rsvpNo", "rsvpOther", "deadlinePassed", "taken", "alreadyReserved", "released", "reservedSuccess", "failed"] as const;
 type Notice = (typeof noticeKeys)[number];
 
 const rsvpColors = {
