@@ -2,6 +2,7 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { redirectWithNotice } from "@/lib/flash-notice";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -16,16 +17,14 @@ function id(data: FormData, key: string) {
   const value = text(data, key);
   return value && uuid.test(value) ? value : null;
 }
-function finish(eventId: string | null, notice: string): never {
+function finish(eventId: string | null, notice: string): Promise<never> {
   revalidatePath("/admin");
-  const query = new URLSearchParams({ notice });
-  if (eventId) query.set("event", eventId);
-  redirect(`/admin?${query.toString()}`);
+  return redirectWithNotice("admin", eventId ? `/admin?event=${eventId}` : "/admin", notice);
 }
 async function authorizedEvent(data: FormData) {
   await requireAdmin();
   const eventId = id(data, "eventId");
-  if (!eventId) finish(null, "invalid");
+  if (!eventId) return finish(null, "invalid");
   return eventId;
 }
 
@@ -40,11 +39,11 @@ export async function createEvent(data: FormData) {
   await requireAdmin();
   const title = text(data, "title");
   const locale = text(data, "locale");
-  if (!title || (locale !== "es" && locale !== "en")) finish(null, "invalid");
+  if (!title || (locale !== "es" && locale !== "en")) return finish(null, "invalid");
   const { data: event, error } = await createServiceClient().from("events")
     .insert({ title, locale }).select("id").single();
-  if (error || !event) finish(null, "error");
-  finish(event.id, "saved");
+  if (error || !event) return finish(null, "error");
+  return finish(event.id, "saved");
 }
 
 export async function saveEvent(data: FormData) {
@@ -53,22 +52,22 @@ export async function saveEvent(data: FormData) {
   const content = text(data, "content", 10000);
   const locale = text(data, "locale");
   const deadline = text(data, "deadline");
-  if (!title || content === null || deadline === null || (locale !== "es" && locale !== "en")) finish(eventId, "invalid");
+  if (!title || content === null || deadline === null || (locale !== "es" && locale !== "en")) return finish(eventId, "invalid");
   let deadlineIso: string | null = null;
   if (deadline) {
-    if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(deadline)) finish(eventId, "invalid");
+    if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(deadline)) return finish(eventId, "invalid");
     const date = new Date(`${deadline}:00Z`);
-    if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 16) !== deadline) finish(eventId, "invalid");
+    if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 16) !== deadline) return finish(eventId, "invalid");
     deadlineIso = date.toISOString();
   }
   const db = createServiceClient();
   const file = data.get("image");
   let imagePath: string | undefined;
   if (file instanceof File && file.size > 0) {
-    if (file.size > 4 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) finish(eventId, "imageInvalid");
+    if (file.size > 4 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) return finish(eventId, "imageInvalid");
     imagePath = `${eventId}/${randomUUID()}`;
     const { error } = await db.storage.from("invitations").upload(imagePath, file, { contentType: file.type });
-    if (error) finish(eventId, "error");
+    if (error) return finish(eventId, "error");
   }
   const { data: changed, error } = await db.from("events").update({ title, invitation_content: content || null,
     locale, rsvp_deadline: deadlineIso, updated_at: new Date().toISOString(),
@@ -76,20 +75,20 @@ export async function saveEvent(data: FormData) {
   }).eq("id", eventId).select("id").maybeSingle();
   if (error || !changed) {
     if (imagePath) await db.storage.from("invitations").remove([imagePath]);
-    finish(eventId, "error");
+    return finish(eventId, "error");
   }
-  finish(eventId, "saved");
+  return finish(eventId, "saved");
 }
 
 export async function deleteGuest(data: FormData) {
   const eventId = await authorizedEvent(data);
   const guestId = id(data, "guestId");
-  if (!guestId) finish(eventId, "invalid");
+  if (!guestId) return finish(eventId, "invalid");
   const { data: deleted, error } = await createServiceClient().from("guests").delete()
     .eq("id", guestId).eq("event_id", eventId).select("id").maybeSingle();
-  if (error?.code === "23503") finish(eventId, "guestReserved");
-  if (error || !deleted) finish(eventId, "error");
-  finish(eventId, "saved");
+  if (error?.code === "23503") return finish(eventId, "guestReserved");
+  if (error || !deleted) return finish(eventId, "error");
+  return finish(eventId, "saved");
 }
 
 export async function saveSection(
@@ -151,52 +150,52 @@ export async function assignGift(data: FormData) {
   const eventId = await authorizedEvent(data);
   const guestId = id(data, "guestId");
   const giftId = id(data, "giftId");
-  if (!guestId || !giftId) finish(eventId, "invalid");
+  if (!guestId || !giftId) return finish(eventId, "invalid");
 
   const db = createServiceClient();
   const { data: guest, error: guestError } = await db.from("guests")
     .select("token").eq("id", guestId).eq("event_id", eventId).maybeSingle();
-  if (guestError) finish(eventId, "error");
-  if (!guest) finish(eventId, "invalid");
+  if (guestError) return finish(eventId, "error");
+  if (!guest) return finish(eventId, "invalid");
   const { data: reserved, error } = await db.rpc("reserve_gift", {
     p_token: guest.token, p_gift_id: giftId,
   });
-  if (error?.code === "23505") finish(eventId, "familyAlreadyReserved");
-  if (error) finish(eventId, "error");
-  finish(eventId, reserved ? "saved" : "giftUnavailable");
+  if (error?.code === "23505") return finish(eventId, "familyAlreadyReserved");
+  if (error) return finish(eventId, "error");
+  return finish(eventId, reserved ? "saved" : "giftUnavailable");
 }
 
 export async function deleteGift(data: FormData) {
   const eventId = await authorizedEvent(data);
   const giftId = id(data, "giftId");
-  if (!giftId) finish(eventId, "invalid");
+  if (!giftId) return finish(eventId, "invalid");
   const { data: deleted, error } = await createServiceClient().from("gifts").delete()
     .eq("id", giftId).eq("event_id", eventId).select("id").maybeSingle();
-  if (error || !deleted) finish(eventId, "error");
-  finish(eventId, "saved");
+  if (error || !deleted) return finish(eventId, "error");
+  return finish(eventId, "saved");
 }
 
 export async function sendInvitations(data: FormData) {
   const eventId = await authorizedEvent(data);
   const guestIdValue = text(data, "guestId");
-  if (guestIdValue && !uuid.test(guestIdValue)) finish(eventId, "invalid");
+  if (guestIdValue && !uuid.test(guestIdValue)) return finish(eventId, "invalid");
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.RESEND_FROM_EMAIL?.trim();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!apiKey || !from || !appUrl) finish(eventId, "emailNotConfigured");
+  if (!apiKey || !from || !appUrl) return finish(eventId, "emailNotConfigured");
   const db = createServiceClient();
   const { data: event, error: eventError } = await db.from("events")
     .select("title, invitation_content, invitation_image_path").eq("id", eventId).maybeSingle();
-  if (eventError || !event) finish(eventId, "error");
-  if (!event.invitation_image_path) finish(eventId, "emailNoImage");
+  if (eventError || !event) return finish(eventId, "error");
+  if (!event.invitation_image_path) return finish(eventId, "emailNoImage");
   let query = db.from("guests").select("id, display_name, email, token")
     .eq("event_id", eventId).not("email", "is", null);
   query = guestIdValue ? query.eq("id", guestIdValue) : query.is("invited_at", null);
   const { data: guests, error: guestsError } = await query.order("id");
-  if (guestsError || !guests) finish(eventId, "error");
-  if (!guests.length) finish(eventId, "emailNone");
+  if (guestsError || !guests) return finish(eventId, "error");
+  if (!guests.length) return finish(eventId, "emailNone");
   const { data: image, error: imageError } = await db.storage.from("invitations").download(event.invitation_image_path);
-  if (imageError || !image || !["image/jpeg", "image/png", "image/webp"].includes(image.type)) finish(eventId, "emailImageError");
+  if (imageError || !image || !["image/jpeg", "image/png", "image/webp"].includes(image.type)) return finish(eventId, "emailImageError");
   const imageContent = Buffer.from(await image.arrayBuffer()).toString("base64");
   const { sendInvitation } = await import("@/lib/email/resend.mjs");
   let sent = 0;
@@ -237,7 +236,5 @@ export async function sendInvitations(data: FormData) {
       unrecorded++;
     }
   }
-  revalidatePath("/admin");
-  const result = new URLSearchParams({ event: eventId, notice: "emailResult", sent: String(sent), failed: String(failed), unrecorded: String(unrecorded) });
-  redirect(`/admin?${result}`);
+  return finish(eventId, `emailResult:${sent}:${failed}:${unrecorded}`);
 }

@@ -1,3 +1,5 @@
+import { FlashToast } from "@/components/toast";
+import { readNotice } from "@/lib/flash-notice";
 import { RemoveRowButton } from "@/components/admin/remove-row-button";
 import { SubmitButton } from "@/components/submit-button";
 import { requireAdmin } from "@/lib/admin/auth";
@@ -16,7 +18,7 @@ const outline = "rounded border border-slate-600 px-3 py-2";
 const notices = ["saved", "invalid", "error", "imageInvalid", "guestReserved", "familyAlreadyReserved", "giftUnavailable", "emailNotConfigured", "emailNoImage", "emailImageError", "emailNone"] as const;
 type Notice = (typeof notices)[number];
 
-export default async function Admin({ searchParams }: { searchParams: Promise<{ event?: string; notice?: string; sent?: string; failed?: string; unrecorded?: string }> }) {
+export default async function Admin({ searchParams }: { searchParams: Promise<{ event?: string }> }) {
   await requireAdmin();
   const db = createServiceClient();
   const query = await searchParams;
@@ -28,9 +30,11 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   const locale = event?.locale === "en" ? "en" : "es";
   const t = adminMessages[locale];
   const count = (value?: string) => /^\d{1,6}$/.test(value ?? "") ? Number(value) : 0;
-  const notice = query.notice === "emailResult"
-    ? t.emailResult(count(query.sent), count(query.failed), count(query.unrecorded))
-    : notices.includes(query.notice as Notice) ? t[query.notice as Notice] : null;
+  const notice = await readNotice("admin");
+  const [code, sent, failed, unrecorded] = notice?.code.split(":") ?? [];
+  const message = code === "emailResult"
+    ? t.emailResult(count(sent), count(failed), count(unrecorded))
+    : notices.includes(code as Notice) ? t[code as Notice] : null;
   const emailEnabled = Boolean(process.env.RESEND_API_KEY?.trim() && process.env.RESEND_FROM_EMAIL?.trim());
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   if (!appUrl) throw new Error("App URL is missing");
@@ -57,7 +61,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   }
   return <DraftGuard locale={locale} warning={t.unsaved}>
     <header className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-3xl font-bold">{t.title}</h1><form action={signOut}><SubmitButton className={outline}>{t.signOut}</SubmitButton></form></header>
-    {notice && <p role="status" className="rounded bg-slate-100 p-3">{notice}</p>}
+    {notice && message && <FlashToast notice={notice} path="/admin" text={message}
+      error={code !== "saved" && code !== "emailResult"} />}
     {events.length > 1 && <nav aria-label={t.selectEvent} className="flex flex-wrap gap-3">{events.map(item => <a key={item.id} href={`/admin?event=${item.id}`} className="underline" aria-current={item.id === event?.id ? "page" : undefined}>{item.title}</a>)}</nav>}
     <details className="rounded border p-4" open={!event}><summary className="cursor-pointer font-semibold">{t.newEvent}</summary>
       {!event && <p>{t.noEvent}</p>}

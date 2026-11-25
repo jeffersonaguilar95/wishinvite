@@ -1,3 +1,5 @@
+import { FlashToast } from "@/components/toast";
+import { readNotice } from "@/lib/flash-notice";
 import { SubmitButton } from "@/components/submit-button";
 import { notFound } from "next/navigation";
 import { guestMessages, type GuestLocale } from "@/lib/i18n/guest";
@@ -18,10 +20,8 @@ const rsvpColors = {
 
 export default async function InvitationPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ notice?: string }>;
 }) {
   const { token } = await params;
   if (token.length < 22 || token.length > 256) notFound();
@@ -42,8 +42,8 @@ export default async function InvitationPage({
   const locale: GuestLocale = event.locale === "en" ? "en" : "es";
   const text = guestMessages[locale];
   const closed = event.rsvp_deadline !== null && new Date(event.rsvp_deadline).getTime() <= Date.now();
-  const notice = (await searchParams).notice;
-  const message = noticeKeys.includes(notice as Notice) ? text[notice as Notice] : null;
+  const notice = await readNotice("invitation");
+  const message = notice && noticeKeys.includes(notice.code as Notice) ? text[notice.code as Notice] : null;
   let imageUrl: string | null = null;
   if (event.invitation_image_path) {
     const { data, error } = await db.storage.from("invitations")
@@ -71,7 +71,8 @@ export default async function InvitationPage({
         <img src={imageUrl} referrerPolicy="no-referrer" alt={text.invitation} className="h-auto w-full rounded-lg" />
       )}
       {event.invitation_content && <p className="whitespace-pre-wrap">{event.invitation_content}</p>}
-      {message && <p role="status" className="rounded bg-slate-100 p-3">{message}</p>}
+      {notice && message && <FlashToast notice={notice} path={`/i/${encodeURIComponent(token)}`} text={message}
+        error={["failed", "taken", "alreadyReserved", "deadlinePassed"].includes(notice.code)} />}
       <section className="space-y-3" aria-labelledby="rsvp-heading">
         <h2 id="rsvp-heading" className="text-2xl font-semibold">{text.attendance}</h2>
         {closed && <p>{text.deadlinePassed}</p>}

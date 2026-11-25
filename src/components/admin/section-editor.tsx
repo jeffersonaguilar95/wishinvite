@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { RemoveRowButton } from "./remove-row-button";
+import { useToast } from "@/components/toast";
 import { SubmitButton } from "@/components/submit-button";
 import { saveSection } from "@/app/admin/actions";
 import { adminMessages } from "@/lib/i18n/admin";
@@ -21,6 +22,7 @@ export function SectionEditor({ eventId, section, rows, locale, giftListDescript
   locale: keyof typeof adminMessages;
 }) {
   const t = adminMessages[locale];
+  const showToast = useToast();
   const nextRow = useRef(0);
   const [added, setAdded] = useState<Row[]>([]);
   const [drafts, setDrafts] = useState<Record<string, Values>>({});
@@ -79,9 +81,12 @@ export function SectionEditor({ eventId, section, rows, locale, giftListDescript
         setDrafts({});
         setAdded([]);
         setDescriptionDraft(null);
+        showToast({ text: t.saved });
+      } else if (response.status === "error") {
+        showToast({ text: t.error, error: true });
       }
     } catch {
-      setResult({ status: "error" });
+      showToast({ text: t.error, error: true });
     } finally {
       setSaving(false);
     }
@@ -137,8 +142,6 @@ export function SectionEditor({ eventId, section, rows, locale, giftListDescript
       <SubmitButton className={button} disabled={!dirty} loading={saving}>
         {section === "guests" ? t.saveGuests : t.saveGifts}
       </SubmitButton>
-      {result?.status === "saved" && <p role="status">{t.saved}</p>}
-      {result?.status === "error" && <p role="alert">{t.error}</p>}
     </form>
   </>;
 }

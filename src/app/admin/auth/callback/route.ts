@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { noticeCookie } from "@/lib/flash-notice";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -18,5 +19,7 @@ export async function GET(request: Request) {
       await client.auth.signOut();
     }
   }
-  return NextResponse.redirect(new URL("/admin/login?notice=error", origin));
+  const response = NextResponse.redirect(new URL("/admin/login", origin));
+  response.cookies.set(noticeCookie("login", "/admin/login", "error"));
+  return response;
 }
