@@ -24,7 +24,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   const db = createServiceClient();
   const query = await searchParams;
   const { data: events, error: eventsError } = await db.from("events")
-    .select("id, title, locale, invitation_content, invitation_image_path, rsvp_deadline, gift_list_description")
+    .select("id, title, locale, invitation_content, invitation_image_path, rsvp_deadline, gift_list_description, invitation_share_message")
     .order("created_at").order("id");
   if (eventsError || !events) throw new Error("Unable to load events");
   const event = events.find(item => item.id === query.event) ?? events[0];
@@ -80,6 +80,12 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
           <label className="block">{t.eventTitle}<input className={input} name="title" defaultValue={event.title} required maxLength={200} /></label>
           <label className="block">{t.locale}<select className={input} name="locale" defaultValue={locale}><option value="es">{t.spanish}</option><option value="en">{t.english}</option></select></label>
           <label className="block">{t.content}<textarea className={input} name="content" defaultValue={event.invitation_content ?? ""} maxLength={10000} /></label>
+          <label className="block">
+            {t.shareMessage}
+            <textarea className={input} name="shareMessage" defaultValue={event.invitation_share_message ?? ""}
+              placeholder={t.defaultShareMessage} rows={4} maxLength={2000} aria-describedby="share-message-hint" />
+          </label>
+          <p id="share-message-hint" className="text-sm text-slate-700">{t.shareMessageHint}</p>
           <label className="block">{t.deadline}<input className={input} type="datetime-local" name="deadline" defaultValue={event.rsvp_deadline ? new Date(event.rsvp_deadline).toISOString().slice(0, 16) : ""} /></label>
           <label className="block">{t.image}<input className={input} type="file" name="image" accept="image/jpeg,image/png,image/webp" /></label><SubmitButton className={button}>{t.save}</SubmitButton>
         </form>
@@ -92,11 +98,17 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
         <SectionEditor key={`guests-${event.id}`} section="guests" eventId={event.id} locale={locale}
           rows={guests.map(guest => {
             const link = new URL(`/i/${encodeURIComponent(guest.token)}`, appUrl).toString();
+            const template = event.invitation_share_message ?? t.defaultShareMessage;
+            const message = template.includes("{nombre}")
+              ? template.replaceAll("{nombre}", () => guest.display_name)
+              : `${t.shareGreeting(guest.display_name)}\n\n${template}`;
             return {
               id: guest.id,
               values: { name: guest.display_name, email: guest.email ?? "" },
               inlineField: <CopyLink url={link} fieldLabel={t.invitationLink} label={t.copy}
                 copied={t.copied} failed={t.copyFailed}
+                invitation={{ text: `${message}\n\n${link}`, label: t.copyInvitation,
+                  copied: t.invitationCopied, failed: t.invitationCopyFailed }}
                 endAction={<form action={deleteGuest} className="flex">
                   <input type="hidden" name="eventId" value={event.id} />
                   <input type="hidden" name="guestId" value={guest.id} />

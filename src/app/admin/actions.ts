@@ -50,9 +50,10 @@ export async function saveEvent(data: FormData) {
   const eventId = await authorizedEvent(data);
   const title = text(data, "title");
   const content = text(data, "content", 10000);
+  const shareMessage = text(data, "shareMessage", 2000);
   const locale = text(data, "locale");
   const deadline = text(data, "deadline");
-  if (!title || content === null || deadline === null || (locale !== "es" && locale !== "en")) return finish(eventId, "invalid");
+  if (!title || content === null || shareMessage === null || deadline === null || (locale !== "es" && locale !== "en")) return finish(eventId, "invalid");
   let deadlineIso: string | null = null;
   if (deadline) {
     if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(deadline)) return finish(eventId, "invalid");
@@ -70,7 +71,7 @@ export async function saveEvent(data: FormData) {
     if (error) return finish(eventId, "error");
   }
   const { data: changed, error } = await db.from("events").update({ title, invitation_content: content || null,
-    locale, rsvp_deadline: deadlineIso, updated_at: new Date().toISOString(),
+    locale, invitation_share_message: shareMessage || null, rsvp_deadline: deadlineIso, updated_at: new Date().toISOString(),
     ...(imagePath ? { invitation_image_path: imagePath } : {}),
   }).eq("id", eventId).select("id").maybeSingle();
   if (error || !changed) {
