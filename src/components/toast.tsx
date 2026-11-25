@@ -1,23 +1,31 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 
 type Message = { text: string; error?: boolean };
 
-const ToastContext = createContext<(message: Message) => void>(() => {});
+let currentMessage: Message | null = null;
+let timeout: number | undefined;
+const listeners = new Set<() => void>();
 
-export function useToast() {
-  return useContext(ToastContext);
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
+
+function setMessage(message: Message | null) {
+  currentMessage = message;
+  listeners.forEach(listener => listener());
+}
+
+export function showToast(message: Message) {
+  window.clearTimeout(timeout);
+  setMessage(message);
+  timeout = window.setTimeout(() => setMessage(null), 5000);
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [message, setMessage] = useState<Message | null>(null);
-
-  useEffect(() => {
-    if (!message) return;
-    const timeout = window.setTimeout(() => setMessage(null), 5000);
-    return () => window.clearTimeout(timeout);
-  }, [message]);
+  const message = useSyncExternalStore(subscribe, () => currentMessage, () => null);
 
   return <>
     {children}
@@ -38,15 +46,14 @@ export function FlashToast({ notice, path, text, error }: {
   text: string;
   error?: boolean;
 }) {
-  const showToast = useToast();
   const { name, value } = notice;
 
   useEffect(() => {
     const entry = `${name}=${encodeURIComponent(value)}`;
-    if (!document.cookie.split("; ").includes(entry)) return;
+    if (!document.cookie.split(/;\s*/).includes(entry)) return;
     document.cookie = `${name}=; Max-Age=0; Path=${path}; SameSite=Lax`;
     showToast({ text, error });
-  }, [name, value, path, text, error, showToast]);
+  }, [name, value, path, text, error]);
 
   return null;
 }

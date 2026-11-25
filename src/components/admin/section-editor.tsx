@@ -2,7 +2,7 @@
 
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { RemoveRowButton } from "./remove-row-button";
-import { useToast } from "@/components/toast";
+import { showToast } from "@/components/toast";
 import { SubmitButton } from "@/components/submit-button";
 import { saveSection } from "@/app/admin/actions";
 import { adminMessages } from "@/lib/i18n/admin";
@@ -22,7 +22,6 @@ export function SectionEditor({ eventId, section, rows, locale, giftListDescript
   locale: keyof typeof adminMessages;
 }) {
   const t = adminMessages[locale];
-  const showToast = useToast();
   const nextRow = useRef(0);
   const [added, setAdded] = useState<Row[]>([]);
   const [drafts, setDrafts] = useState<Record<string, Values>>({});
